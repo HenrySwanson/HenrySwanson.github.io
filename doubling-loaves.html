@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+ 
+<head>
+  <title>Math Mondays - Doubling Loaves, in Two Ways</title>
+
+  <meta charset="utf-8" />
+  <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+  <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+  <!-- import meta.html stuff -->
+
+  <!--[if lt IE 9]>
+    <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link rel="stylesheet" type="text/css" href="https://mathmondays.com/theme/css/style.min.css?feb40fa0" />
+
+  <!-- TODO i don't understand feeds yet
+  <link href="https://mathmondays.com/feed.xml" type="application/atom+xml" rel="alternate" title="Math Mondays Atom Feed" />
+  <link href="https://mathmondays.com/" type="application/rss+xml" rel="alternate" title="Math Mondays RSS Feed" />
+  <link href="https://mathmondays.com/" type="application/atom+xml" rel="alternate" title="Math Mondays Atom Feed" />
+  <link href="https://mathmondays.com/" type="application/rss+xml" rel="alternate" title="Math Mondays RSS Feed" /> -->
+        
+</head>
+
+<body>
+  <header class="site-header">
+  	<nav>
+      <ul>
+        <li><a href="https://mathmondays.com/">home</a></li>
+        <li><a href="https://mathmondays.com/about">about</a></li>
+        <li><a href="https://github.com/HenrySwanson/HenrySwanson.github.io">source</a></li>
+      </ul>
+    </nav>
+    <h1>Math Mondays</h1>
+    <h2>A work in progress.</h2>
+  </header>
+
+<section>
+  <header>
+    <h1 class="article-title">
+      <a href="https://mathmondays.com/doubling-loaves" title="Permalink to Doubling Loaves, in Two Ways">Doubling Loaves, in Two Ways</a>
+    </h1>
+    <div class="article-date">September 17, 2018</div>
+
+    <div class="article-tags">
+      tags:
+      <a href="https://mathmondays.com/tag/puzzles">puzzles</a>
+    </div>
+  </header>
+
+  <section><p>This one comes from a puzzle that a coworker gave me.</p>
+<p>There&rsquo;s a miracle in the Gospels in which Jesus feeds a crowd of 5000, using only a few loaves of bread and some fish. As he breaks the food apart and hands it out, it does not diminish, and eventually the entire crowd is fed.</p>
+<p>In our puzzle, we have a prophet who is not quite so saintly. He starts with a single loaf of bread, and has to feed a crowd of <span class="math">\(N\)</span> people. But he also wants to be able to feed himself. Furthermore, our guy&rsquo;s got a bit of a gambling problem: at each step, he flips a fair, unbiased coin.</p>
+<ul>
+<li>If it comes up heads, he duplicates one of his loaves.</li>
+<li>Otherwise, he hands out a loaf of bread to someone in the crowd.</li>
+</ul>
+<p>He only stops when he runs out of bread, or he creates <span class="math">\(N\)</span> new loaves (at which point, the entire crowd can be fed, and he can eat the original loaf).</p>
+<p>The question is: what is the probability that he can successfully feed everyone?</p>
+<!-- more -->
+
+<hr>
+<p>For small values of <span class="math">\(N\)</span>, we can manage this by hand:</p>
+<ul>
+<li><span class="math">\(N = 0\)</span>: He can always feed himself, so the probability of success, <span class="math">\(p\)</span>, is <span class="math">\(1\)</span>. </li>
+<li><span class="math">\(N = 1\)</span>: Everything depends on the first coin toss. If it is heads, then he has two loaves, and can feed himself and someone else. Otherwise, he&rsquo;s just handed away his only loaf, and the game ends. So <span class="math">\(p = 1/2\)</span>.</li>
+<li><span class="math">\(N = 2\)</span>: As before, he must flip heads on the first toss. Consider the second toss. If it is heads, then he has created two loaves, plus the original, and so everyone can be fed. Otherwise, he hands out a loaf, leaving him with one loaf, and two people to feed. This reduces to the previous case, in which there is a <span class="math">\(1/2\)</span> chance of success. So if he makes the first toss, he has a <span class="math">\(3/4\)</span> chance of success, giving us <span class="math">\(p = 3/8\)</span> for the whole process.</li>
+</ul>
+<p>Clearly, this gets tedious quickly. We need a more systematic approach.</p>
+<h2>First Approach</h2>
+<p>One approach is to rephrase this as a problem about lattice walks.</p>
+<p>Let the point <span class="math">\((x, y)\)</span> represent the state where we have created <span class="math">\(x\)</span> new loaves (not counting the original loaf), and fed <span class="math">\(y\)</span> people (not counting himself). Then duplicating a loaf is a step to the right, and handing out a loaf is a step upward. On this grid, the prophet starts at <span class="math">\((0, 0)\)</span>, and randomly chooses to walk right or up. He wins if he touches the line <span class="math">\(x = N\)</span>, and loses if he crosses the diagonal <span class="math">\(x = y\)</span>. (Touching the diagonal is okay, at that point, he still has one loaf left.)</p>
+<p>Let <span class="math">\(p(a, b)\)</span> be the probability that the prophet reaches the point <span class="math">\((a, b)\)</span> on his random walk. It&rsquo;s only possible to reach the region <span class="math">\(0 \le b \le a\)</span>, so we will set <span class="math">\(p(a, b) = 0\)</span> outside this range. Since it&rsquo;s our starting point, <span class="math">\(p(0, 0)\)</span> is clearly <span class="math">\(1\)</span>. For all other points, we can state our probability recursively; if the prophet gets to the point <span class="math">\((a, b)\)</span>, then he must have come from <span class="math">\((a-1, b)\)</span> or <span class="math">\((a, b-1)\)</span>. From either of those points, he has a <span class="math">\(1/2\)</span> chance of getting to <span class="math">\((a, b)\)</span>, so <span class="math">\(p(a, b) = \frac{1}{2}(p(a-1, b) + p(a, b-1))\)</span>.</p>
+<p>If you write these numbers out in a grid, you&rsquo;ll quickly get tired of seeing powers of <span class="math">\(2\)</span> in the denominator:</p>
+<!-- TODO remove header row -->
+
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><span class="math">\(0\)</span></td>
+<td><span class="math">\(0\)</span></td>
+<td><span class="math">\(0\)</span></td>
+<td><span class="math">\(0\)</span></td>
+<td><span class="math">\(7/128\)</span></td>
+<td><span class="math">\(21/256\)</span></td>
+<td><span class="math">\(15/256\)</span></td>
+</tr>
+<tr>
+<td><span class="math">\(0\)</span></td>
+<td><span class="math">\(0\)</span></td>
+<td><span class="math">\(0\)</span></td>
+<td><span class="math">\(5/64\)</span></td>
+<td><span class="math">\(7/64\)</span></td>
+<td><span class="math">\(7/64\)</span></td>
+<td><span class="math">\(3/32\)</span></td>
+</tr>
+<tr>
+<td><span class="math">\(0\)</span></td>
+<td><span class="math">\(0\)</span></td>
+<td><span class="math">\(1/8\)</span></td>
+<td><span class="math">\(5/32\)</span></td>
+<td><span class="math">\(9/64\)</span></td>
+<td><span class="math">\(7/64\)</span></td>
+<td><span class="math">\(5/64\)</span></td>
+</tr>
+<tr>
+<td><span class="math">\(0\)</span></td>
+<td><span class="math">\(1/4\)</span></td>
+<td><span class="math">\(1/4\)</span></td>
+<td><span class="math">\(3/16\)</span></td>
+<td><span class="math">\(1/8\)</span></td>
+<td><span class="math">\(5/64\)</span></td>
+<td><span class="math">\(3/64\)</span></td>
+</tr>
+<tr>
+<td><span class="math">\(1\)</span></td>
+<td><span class="math">\(1/2\)</span></td>
+<td><span class="math">\(1/4\)</span></td>
+<td><span class="math">\(1/8\)</span></td>
+<td><span class="math">\(1/16\)</span></td>
+<td><span class="math">\(1/32\)</span></td>
+<td><span class="math">\(1/64\)</span></td>
+</tr>
+</tbody>
+</table>
+<p>So we&rsquo;ll define an auxilary function <span class="math">\(q(a, b) = 2^{a+b} p(a, b)\)</span>, leaving us with nice clean integers. The recurrence relation for <span class="math">\(q\)</span> is:
+</p>
+<div class="math">$$ q(0, 0) = 1 \qquad q(a, b) = 0 \textrm{ if } b &gt; a \qquad q(a, b) = q(a-1, b) + q(a, b-1) \textrm{ otherwise} $$</div>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><span class="math">\(0\)</span></td>
+<td><span class="math">\(0\)</span></td>
+<td><span class="math">\(0\)</span></td>
+<td><span class="math">\(0\)</span></td>
+<td><span class="math">\(14\)</span></td>
+<td><span class="math">\(42\)</span></td>
+<td><span class="math">\(90\)</span></td>
+</tr>
+<tr>
+<td><span class="math">\(0\)</span></td>
+<td><span class="math">\(0\)</span></td>
+<td><span class="math">\(0\)</span></td>
+<td><span class="math">\(5\)</span></td>
+<td><span class="math">\(14\)</span></td>
+<td><span class="math">\(28\)</span></td>
+<td><span class="math">\(48\)</span></td>
+</tr>
+<tr>
+<td><span class="math">\(0\)</span></td>
+<td><span class="math">\(0\)</span></td>
+<td><span class="math">\(2\)</span></td>
+<td><span class="math">\(5\)</span></td>
+<td><span class="math">\(9\)</span></td>
+<td><span class="math">\(14\)</span></td>
+<td><span class="math">\(20\)</span></td>
+</tr>
+<tr>
+<td><span class="math">\(0\)</span></td>
+<td><span class="math">\(1\)</span></td>
+<td><span class="math">\(2\)</span></td>
+<td><span class="math">\(3\)</span></td>
+<td><span class="math">\(4\)</span></td>
+<td><span class="math">\(5\)</span></td>
+<td><span class="math">\(6\)</span></td>
+</tr>
+<tr>
+<td><span class="math">\(1\)</span></td>
+<td><span class="math">\(1\)</span></td>
+<td><span class="math">\(1\)</span></td>
+<td><span class="math">\(1\)</span></td>
+<td><span class="math">\(1\)</span></td>
+<td><span class="math">\(1\)</span></td>
+<td><span class="math">\(1\)</span></td>
+</tr>
+</tbody>
+</table>
+<p>This table, and the recurrence relation, feel somewhat like Pascal&rsquo;s triangle, with the apex in the lower left, and each counter-diagonal forming a row.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><span class="math">\(1\)</span></td>
+<td><span class="math">\(5\)</span></td>
+<td><span class="math">\(15\)</span></td>
+<td><span class="math">\(35\)</span></td>
+<td><span class="math">\(70\)</span></td>
+<td><span class="math">\(126\)</span></td>
+<td><span class="math">\(210\)</span></td>
+</tr>
+<tr>
+<td><span class="math">\(1\)</span></td>
+<td><span class="math">\(4\)</span></td>
+<td><span class="math">\(10\)</span></td>
+<td><span class="math">\(20\)</span></td>
+<td><span class="math">\(35\)</span></td>
+<td><span class="math">\(56\)</span></td>
+<td><span class="math">\(84\)</span></td>
+</tr>
+<tr>
+<td><span class="math">\(1\)</span></td>
+<td><span class="math">\(3\)</span></td>
+<td><span class="math">\(6\)</span></td>
+<td><span class="math">\(10\)</span></td>
+<td><span class="math">\(15\)</span></td>
+<td><span class="math">\(21\)</span></td>
+<td><span class="math">\(28\)</span></td>
+</tr>
+<tr>
+<td><span class="math">\(1\)</span></td>
+<td><span class="math">\(2\)</span></td>
+<td><span class="math">\(3\)</span></td>
+<td><span class="math">\(4\)</span></td>
+<td><span class="math">\(5\)</span></td>
+<td><span class="math">\(6\)</span></td>
+<td><span class="math">\(7\)</span></td>
+</tr>
+<tr>
+<td><span class="math">\(1\)</span></td>
+<td><span class="math">\(1\)</span></td>
+<td><span class="math">\(1\)</span></td>
+<td><span class="math">\(1\)</span></td>
+<td><span class="math">\(1\)</span></td>
+<td><span class="math">\(1\)</span></td>
+<td><span class="math">\(1\)</span></td>
+</tr>
+</tbody>
+</table>
+<p>But since we&rsquo;re forcing the region above the diagonal to be <span class="math">\(0\)</span>, this causes a defect. Subtracting the relevant parts of our grid from Pascal&rsquo;s triangle, we get:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><span class="math">\(-\)</span></td>
+<td><span class="math">\(-\)</span></td>
+<td><span class="math">\(-\)</span></td>
+<td><span class="math">\(-\)</span></td>
+<td><span class="math">\(56\)</span></td>
+<td><span class="math">\(84\)</span></td>
+<td><span class="math">\(120\)</span></td>
+</tr>
+<tr>
+<td><span class="math">\(-\)</span></td>
+<td><span class="math">\(-\)</span></td>
+<td><span class="math">\(-\)</span></td>
+<td><span class="math">\(15\)</span></td>
+<td><span class="math">\(21\)</span></td>
+<td><span class="math">\(28\)</span></td>
+<td><span class="math">\(36\)</span></td>
+</tr>
+<tr>
+<td><span class="math">\(-\)</span></td>
+<td><span class="math">\(-\)</span></td>
+<td><span class="math">\(4\)</span></td>
+<td><span class="math">\(5\)</span></td>
+<td><span class="math">\(6\)</span></td>
+<td><span class="math">\(7\)</span></td>
+<td><span class="math">\(8\)</span></td>
+</tr>
+<tr>
+<td><span class="math">\(-\)</span></td>
+<td><span class="math">\(1\)</span></td>
+<td><span class="math">\(1\)</span></td>
+<td><span class="math">\(1\)</span></td>
+<td><span class="math">\(1\)</span></td>
+<td><span class="math">\(1\)</span></td>
+<td><span class="math">\(1\)</span></td>
+</tr>
+<tr>
+<td><span class="math">\(0\)</span></td>
+<td><span class="math">\(0\)</span></td>
+<td><span class="math">\(0\)</span></td>
+<td><span class="math">\(0\)</span></td>
+<td><span class="math">\(0\)</span></td>
+<td><span class="math">\(0\)</span></td>
+<td><span class="math">\(0\)</span></td>
+</tr>
+</tbody>
+</table>
+<p>This is just a piece of Pascal&rsquo;s triangle, shifted by one! It appears that <span class="math">\(q(a, b) = \binom{a+b}{b} - \binom{a+b}{b-1}\)</span>, a suspicion that is easy to confirm via the recurrence relations.</p>
+<hr>
+<p>Now we know <span class="math">\(q(a, b)\)</span> in closed form, and thus <span class="math">\(p(a, b)\)</span> as well. But we can&rsquo;t just sum over <span class="math">\(p(N, 0)\)</span>, <span class="math">\(p(N, 1)\)</span>, &hellip;, <span class="math">\(p(N, N)\)</span>, because these don&rsquo;t correspond to disjoint events. In fact, to reach <span class="math">\((N, N)\)</span> safely, the prophet must have passed through the point <span class="math">\((N, N-1)\)</span> first!</p>
+<p>We&rsquo;ll have to do something a little silly. Consider the counter-diagonal from <span class="math">\((N, N)\)</span> to <span class="math">\((2N, 0)\)</span>, and note that a path can touch at most one of those points. Furthermore, if there is a path of length <span class="math">\(2N\)</span>, and it touched the line <span class="math">\(x = N\)</span>, then it must end on one of these points.</p>
+<!-- TODO add diagram here -->
+
+<p>So we&rsquo;ll change the rules of the game a little bit. The prophet still loses if he runs out of bread, but otherwise, he must keep flipping until the coin is flipped <span class="math">\(2N\)</span> times. This doesn&rsquo;t affect the end conditions: after the coin has been flipped <span class="math">\(2N\)</span> times, he&rsquo;s either run out of loaves, or he&rsquo;s flipped at least <span class="math">\(N\)</span> heads. And clearly, this doesn&rsquo;t affect his chances of success (once <span class="math">\(N\)</span> new loaves have been created, it is impossible to fail). But it does change where the &ldquo;finish line&rdquo; for our walk is. The prophet succeeds exactly when his walk ends on the counter-diagonal from <span class="math">\((N, N)\)</span> to <span class="math">\((2N, 0)\)</span>!</p>
+<p>This telescopes easily into a clean expression:
+</p>
+<div class="math">$$ \sum_{k = 0}^N p(2N-k, k) = \sum_{k = 0}^N \frac{1}{2^{2N}} \left( \binom{2N}{k} - \binom{2N}{k-1} \right) = \frac{1}{2^{2N}} \binom{2N}{N} $$</div>
+<hr>
+<h2>Second Approach</h2>
+<p>As suggested by the title of this post, I&rsquo;ll also describe a second solution to this puzzle, using generating functions. Sure, this will involve some slightly heavier machinery than the previous approach, which was rather elementary, but there is a certain elegance to it.</p>
+<p>Let <span class="math">\(a_n\)</span> be the probability that the prophet ended up with exactly <span class="math">\(n\)</span> loaves, including the original loaf. The only way to end up with exactly one loaf is to flip tails immediately, so <span class="math">\(a_1 = 1/2\)</span>.</p>
+<p>For <span class="math">\(n &gt; 1\)</span>, he must flip heads first, giving two loaves. If he ended up with exactly <span class="math">\(n\)</span> loaves total, he must have gotten <span class="math">\(k\)</span> from the first loaf, and <span class="math">\(n-k\)</span> from the second loaf. Since the loaves act independently, this has probability <span class="math">\(\sum_{k=1}^{n-1} a_k a_{n-1}\)</span>. Factoring in the fact that he needs to flip heads the first time, we deduce <span class="math">\(a_n = \frac{1}{2} \sum_{k=1}^{n-1} a_k a_{n-k}\)</span>.</p>
+<p>If we take the bold (and intuitive!) step of defining <span class="math">\(a_0 = 0\)</span>, we can change the bounds on that sum to be <span class="math">\(0\)</span> through <span class="math">\(n\)</span>, which will make our lives easier.</p>
+<p>Let <span class="math">\(G(x) = a_0 + a_1 x + a_2 x^2 + \cdots\)</span> be the generating function for <span class="math">\(a_n\)</span>. We can tease out a very nice expression for <span class="math">\(G(x)\)</span>:
+</p>
+<div class="math">$$
+\begin{align*}
+G(x) &amp;= a_0 + a_1 x + \sum_{n=2}^\infty a_n x^n \\
+&amp;= \frac{1}{2} x + \sum_{n=2}^\infty a_n x^n \\
+&amp;= \frac{1}{2} x + \sum_{n=2}^\infty \left( \frac{1}{2} \sum_{k=0}^n a_k a_{n-k} \right) x^n \\
+G(x) &amp;= \frac{1}{2} x + \frac{1}{2} \sum_{n=2}^\infty \sum_{k=0}^n a_k a_{n-k} x^n \\
+2 G(x) &amp;= x + \sum_{n=2}^\infty \sum_{k=0}^n a_k a_{n-k} x^n
+\end{align*}
+$$</div>
+<p>Since either <span class="math">\(a_k\)</span> or <span class="math">\(a_{n-k}\)</span> will be <span class="math">\(0\)</span> for <span class="math">\(n &lt; 2\)</span>, we can lower the bound on our sum to <span class="math">\(k = 0\)</span> without changeing anything. After that, set <span class="math">\(\ell = n - k\)</span>:
+</p>
+<div class="math">$$
+\begin{align*}
+2 G(x) &amp;= x + \sum_{n=0}^\infty \sum_{k=0}^n a_k a_{n-k} x^n \\
+&amp;= x + \sum_{k=0}^\infty \sum_{\ell=0}^\infty a_k a_\ell x^{k+\ell} \\
+&amp;= x + \left( \sum_{k=0}^\infty a_k x^k \right) \left( \sum_{\ell=0}^\infty a_\ell x^\ell \right) \\
+2G(x) &amp;= x + G(x)^2
+\end{align*}
+$$</div>
+<p>At first blush it looks hard to isolate <span class="math">\(G(x)\)</span>, but once we see this as the quadratic it is, we can apply the handy-dandy quadratic formula:
+</p>
+<div class="math">$$ G(x) = \frac{2 \pm \sqrt{4 - 4x}}{2} = 1 \pm \sqrt{1 - x} $$</div>
+<p>Since <span class="math">\(G(0) = a_0 = 0\)</span>, we know we should take the negative square root.</p>
+<hr>
+<p>We could at this point find a closed-form expression for <span class="math">\(a_n\)</span>, but that&rsquo;s not what we&rsquo;re going to do. Remember that we&rsquo;re not interested in the probability of getting exactly <span class="math">\(N+1\)</span> loaves, but the probability of getting <span class="math">\(N+1\)</span> or more loaves. In other words, we&rsquo;d like to know <span class="math">\(b_{N+1}\)</span>, where <span class="math">\(b_n = 1 - \sum_{k=0}^{n-1} a_k\)</span>. [Note: we&rsquo;re not certain that this is the same as <span class="math">\(\sum_{k=n}^\infty a_k\)</span>; since we haven&rsquo;t ruled out the possibility that this process goes on forever with positive probability. It&rsquo;s possible that the <span class="math">\(a_k\)</span> sum to <span class="math">\(&lt;1\)</span>.]</p>
+<p>Let <span class="math">\(F(x) = b_0 + b_1 x + b_2 x^2 + \cdots\)</span> be the generating function for the <span class="math">\(b_n\)</span>. We&rsquo;ll set <span class="math">\(b_0 = 1\)</span>, since <span class="math">\(1\)</span> minus the empty sum should be <span class="math">\(1\)</span>. If you&rsquo;re familiar with generating functions, you&rsquo;ll know that <span class="math">\(F(x) = \frac{1}{1 - x} - \frac{x}{1 - x} G(x)\)</span>, but for the newcomers, we&rsquo;ll do it in slow motion:</p>
+<p>To sum the terms of the series, we&rsquo;ll multiply by the geometric series <span class="math">\(\frac{1}{1-x} = 1 + x + x^2 + \cdots\)</span>. The coefficient for the <span class="math">\(x^n\)</span> term will then be <span class="math">\(a_0 + \cdots a_n\)</span>.
+</p>
+<div class="math">$$ \frac{G(x)}{1 - x} = \sum_{n=0}^\infty \sum_{k=0}^n a_k x^n $$</div>
+<p>Multiplying by <span class="math">\(x\)</span> knocks our exponents up by one, equivalently, moves our coefficients down by one.
+</p>
+<div class="math">$$ \frac{x}{1- x} G(x) = \sum_{n=0}^\infty \sum_{k=0}^{n} a_k x^{n+1} = \sum_{n=1}^\infty \sum_{k=0}^{n-1} a_k x^n $$</div>
+<p>Lastly, we want to subtract every coefficient (except the first) from <span class="math">\(1\)</span>. Fortunately, we already know what <span class="math">\(1 + x + x^2 + \cdots\)</span> is:
+</p>
+<div class="math">$$ \frac{1}{1 - x} - \frac{x}{1 - x}G(x) = \sum_{n=1}^\infty \left( 1 - \sum_{k=0}^{n-1} a_k \right) x^n $$</div>
+<p>The coefficients on the right are exactly <span class="math">\(b_n\)</span>, so we get <span class="math">\(F(x) = \frac{1}{1 - x} - \frac{x}{1 - x} G(x)\)</span>, as promised. This cleans up to:
+</p>
+<div class="math">$$ F(x) = 1 + \frac{x}{\sqrt{1 - x}} $$</div>
+<p>Using the <a href="https://en.wikipedia.org/wiki/Binomial_theorem#Newton's_generalized_binomial_theorem">generalized binomal theorem</a>, we can arrive at a closed form for <span class="math">\(b_n\)</span>.
+</p>
+<div class="math">$$
+\begin{align*}
+F(x) &amp;= 1 + x (1 - x)^{-1/2} \\
+&amp;= 1 + x \sum_{n=0}^\infty \frac{(-1/2)(-3/2)\cdots(-1/2 - (n-1))}{n!} 1^{-1/2 - n} (-x)^n \\
+&amp;= 1 + x \sum_{n=0}^\infty \frac{(1/2)(3/2)\cdots((2n-1)/2)}{n!} x^n \\
+&amp;= 1 + x \sum_{n=0}^\infty \frac{(1/2) \cdot 1 \cdot (3/2) \cdot 2 \cdots ((2n-1)/2) \cdot n}{n! \cdot n!} x^n \\
+&amp;= 1 + x \sum_{n=0}^\infty \frac{1}{2^{2n}} \frac{1 \cdot 2 \cdot 3 \cdot 4 \cdots (2n-1) \cdot 2n}{n! \cdot n!} x^n \\
+&amp;= 1 + x \sum_{n=0}^\infty \frac{1}{2^{2n}} \binom{2n}{n} x^n \\
+&amp;= 1 + \sum_{n=0}^\infty \frac{1}{2^{2n}} \binom{2n}{n} x^{n+1}
+\end{align*}
+$$</div>
+<p>So, the probability of getting <span class="math">\(N+1\)</span> or more loaves is <span class="math">\(b_{N+1} = \frac{1}{2^{2N}} \binom{2N}{N}\)</span>, which matches the answer we got before. Thank goodness!</p>
+<script type="text/javascript">if (!document.getElementById('mathjaxscript_pelican_#%@#$@#')) {
+    var align = "center",
+        indent = "0em",
+        linebreak = "false";
+
+    if (false) {
+        align = (screen.width < 768) ? "left" : align;
+        indent = (screen.width < 768) ? "0em" : indent;
+        linebreak = (screen.width < 768) ? 'true' : linebreak;
+    }
+
+    var mathjaxscript = document.createElement('script');
+    mathjaxscript.id = 'mathjaxscript_pelican_#%@#$@#';
+    mathjaxscript.type = 'text/javascript';
+    mathjaxscript.src = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.3/latest.js?config=TeX-AMS-MML_HTMLorMML';
+
+    var configscript = document.createElement('script');
+    configscript.type = 'text/x-mathjax-config';
+    configscript[(window.opera ? "innerHTML" : "text")] =
+        "MathJax.Hub.Config({" +
+        "    config: ['MMLorHTML.js']," +
+        "    TeX: { extensions: ['AMSmath.js','AMSsymbols.js','noErrors.js','noUndefined.js'], equationNumbers: { autoNumber: 'none' } }," +
+        "    jax: ['input/TeX','input/MathML','output/HTML-CSS']," +
+        "    extensions: ['tex2jax.js','mml2jax.js','MathMenu.js','MathZoom.js']," +
+        "    displayAlign: '"+ align +"'," +
+        "    displayIndent: '"+ indent +"'," +
+        "    showMathMenu: true," +
+        "    messageStyle: 'normal'," +
+        "    tex2jax: { " +
+        "        inlineMath: [ ['\\\\(','\\\\)'] ], " +
+        "        displayMath: [ ['$$','$$'] ]," +
+        "        processEscapes: true," +
+        "        preview: 'TeX'," +
+        "    }, " +
+        "    'HTML-CSS': { " +
+        "        availableFonts: ['STIX', 'TeX']," +
+        "        preferredFont: 'STIX'," +
+        "        styles: { '.MathJax_Display, .MathJax .mo, .MathJax .mi, .MathJax .mn': {color: 'inherit ! important'} }," +
+        "        linebreaks: { automatic: "+ linebreak +", width: '90% container' }," +
+        "    }, " +
+        "}); " +
+        "if ('default' !== 'default') {" +
+            "MathJax.Hub.Register.StartupHook('HTML-CSS Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax['HTML-CSS'].FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+            "MathJax.Hub.Register.StartupHook('SVG Jax Ready',function () {" +
+                "var VARIANT = MathJax.OutputJax.SVG.FONTDATA.VARIANT;" +
+                "VARIANT['normal'].fonts.unshift('MathJax_default');" +
+                "VARIANT['bold'].fonts.unshift('MathJax_default-bold');" +
+                "VARIANT['italic'].fonts.unshift('MathJax_default-italic');" +
+                "VARIANT['-tex-mathit'].fonts.unshift('MathJax_default-italic');" +
+            "});" +
+        "}";
+
+    (document.body || document.getElementsByTagName('head')[0]).appendChild(configscript);
+    (document.body || document.getElementsByTagName('head')[0]).appendChild(mathjaxscript);
+}
+</script></section>
+
+  <footer>
+  </footer>
+
+</section>
+  <!-- TODO make sure filtering on tags and stuff works -->
+
+  <footer class="site-footer">
+  	<!-- TODO apparently this background color is in a few of the icons -->
+  	<a href="mailto:henryswanson94@gmail.com"><i class="svg-icon email"></i></a>
+  	<a href="https://github.com/HenrySwanson"><i class="svg-icon github"></i></a>
+  	<a href="feed.xml"><i class="svg-icon rss"></i></a>
+  	<a href="https://stackexchange.com/users/2216552/henry-swanson"><i class="svg-icon stackoverflow"></i></a>
+  </footer>
+  <!-- TODO powered by pelican -->
+
+  </body>
+</html>

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+ 
+<head>
+  <title>ring-theory tag - Math Mondays</title>
+
+  <meta charset="utf-8" />
+  <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+  <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+  <!-- import meta.html stuff -->
+
+  <!--[if lt IE 9]>
+    <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+
+  <link rel="stylesheet" type="text/css" href="https://mathmondays.com/theme/css/style.min.css?feb40fa0" />
+
+  <!-- TODO i don't understand feeds yet
+  <link href="https://mathmondays.com/feed.xml" type="application/atom+xml" rel="alternate" title="Math Mondays Atom Feed" />
+  <link href="https://mathmondays.com/" type="application/rss+xml" rel="alternate" title="Math Mondays RSS Feed" />
+  <link href="https://mathmondays.com/" type="application/atom+xml" rel="alternate" title="Math Mondays Atom Feed" />
+  <link href="https://mathmondays.com/" type="application/rss+xml" rel="alternate" title="Math Mondays RSS Feed" /> -->
+        
+</head>
+
+<body>
+  <header class="site-header">
+  	<nav>
+      <ul>
+        <li><a href="https://mathmondays.com/">home</a></li>
+        <li><a href="https://mathmondays.com/about">about</a></li>
+        <li><a href="https://github.com/HenrySwanson/HenrySwanson.github.io">source</a></li>
+      </ul>
+    </nav>
+    <h1>Math Mondays</h1>
+    <h2>A work in progress.</h2>
+  </header>
+
+<section>
+
+<h2>Articles tagged with ring-theory</h2>
+
+<div class="article-container">
+  <header>
+    <h1 class="article-title">
+      <a href="https://mathmondays.com/wedderburn" title="Permalink to Wedderburn's Little Theorem">Wedderburn's Little Theorem</a>
+    </h1>
+    <div class="article-date">November 5, 2018</div>
+
+    <div class="article-tags">
+      tags:
+      <a href="https://mathmondays.com/tag/ring-theory">ring-theory</a>
+    </div>
+  </header>
+
+  <!-- get summaries working again -->
+  <section><p><span class="mathdefs">
+<span class="math">\(\newcommand{\ZZ}{\Bbb Z}
+\newcommand{\QQ}{\Bbb Q}\)</span>
+</span></p>
+<p>Some rings are closer to being fields than others. A <strong>domain</strong> is a ring where we can do cancellation: if <span class="math">\(ab = ac\)</span> and <span class="math">\(a \ne 0\)</span>, then <span class="math">\(b = c\)</span>. Even closer is a <strong>division ring</strong>, a ring in which every non-zero element has a multiplicative inverse. The only distinction between fields and division rings is that the latter may be non-commutative. For this reason, division rings are also called <strong>skew-fields</strong>.</p>
+<p>These form a chain of containments, each of which is strict:
+fields <span class="math">\(\subset\)</span> division rings <span class="math">\(\subset\)</span> domains <span class="math">\(\subset\)</span> rings</p>
+<p>Some examples:</p>
+<ul>
+<li><span class="math">\(\ZZ\)</span> is a domain</li>
+<li><span class="math">\(\ZZ/6\ZZ\)</span> is not a domain</li>
+<li>the set of <span class="math">\(n \times n\)</span> matrices is not a domain; two non-zero matrices can multiply to zero</li>
+<li><span class="math">\(\QQ\)</span> is a field (duh)</li>
+<li>the quaternions are a division ring</li>
+</ul>
+<p>Wedderburn&rsquo;s theorem states that this hierarchy collapses for finite rings: every finite domain is a field.</p>
+</section>
+</div>
+
+
+</section>
+
+<!-- TODO make this on-demand. you probably always need it, but still... -->
+<script type='text/javascript'
+	src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+</script>
+  <!-- TODO make sure filtering on tags and stuff works -->
+
+  <footer class="site-footer">
+  	<!-- TODO apparently this background color is in a few of the icons -->
+  	<a href="mailto:henryswanson94@gmail.com"><i class="svg-icon email"></i></a>
+  	<a href="https://github.com/HenrySwanson"><i class="svg-icon github"></i></a>
+  	<a href="feed.xml"><i class="svg-icon rss"></i></a>
+  	<a href="https://stackexchange.com/users/2216552/henry-swanson"><i class="svg-icon stackoverflow"></i></a>
+  </footer>
+  <!-- TODO powered by pelican -->
+
+  </body>
+</html>
