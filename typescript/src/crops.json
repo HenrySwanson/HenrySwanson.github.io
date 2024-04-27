@@ -1,0 +1,16 @@
+[
+    {
+       "name": "Parsnip",
+       "season": "Spring",
+       "seed_cost": 20,
+       "sell_price": 35,
+       "days_to_grow": 4
+    },
+    {
+        "name": "Cauliflower",
+        "season": "Spring",
+        "seed_cost": 80,
+        "sell_price": 175,
+        "days_to_grow": 12
+     }
+]

@@ -1,0 +1,12 @@
+[
+    {
+        "name": "Parsnip",
+        "season": "Spring",
+        "seed_cost": 20
+    },
+    {
+        "name": "Cauliflower",
+        "season": "Spring",
+        "seed_cost": 80
+    }
+]
