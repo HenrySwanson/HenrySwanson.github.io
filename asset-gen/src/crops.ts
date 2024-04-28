@@ -2,9 +2,11 @@
 
 // should i pull this from a JSON like i'm doing now? or should i just
 // hard-code it inline (might be more readable)
-import crop_definitions from "./crops.json";
+import CROP_DEFINITIONS from "./crops.json";
 
-type CropDefinition = typeof crop_definitions[number];
+/* ======== CALCULATION ======== */
+
+type CropDefinition = typeof CROP_DEFINITIONS[number];
 
 enum Season {
     SPRING, SUMMER, FALL
@@ -47,7 +49,7 @@ function calculate(crop: CropDefinition, start_day: number): CropData {
     // What's the profit? Depends how many harvests we can get this season.
     let num_harvests = 0;
     let useful_days = 0;
-    if (days_left > crop.days_to_grow) {
+    if (days_left >= crop.days_to_grow) {
         num_harvests += 1;
         useful_days += crop.days_to_grow;
         if (crop.regrowth_period) {
@@ -80,8 +82,11 @@ function calculate(crop: CropDefinition, start_day: number): CropData {
     };
 }
 
+/* ======== GUI ======== */
+
+// Defines the set of columns for the whole table.
 type Column = [string, ((crop: CropData) => string)];
-let columns: Column[] = [
+const COLUMNS: Column[] = [
     ["Name", (crop: CropData) => { return crop.name; }],
     ["Season", (crop: CropData) => {
         return Season[crop.season];
@@ -118,46 +123,81 @@ let columns: Column[] = [
     }]
 ];
 
-function hydrateTable() {
-    console.log("Hydrating!");
+class CropRow {
+    data: CropData;
+    row: HTMLTableRowElement;
+
+    constructor(row: HTMLTableRowElement, data: CropData) {
+        this.data = data;
+        this.row = row;
+
+        // now populate the row
+        for (let [_, col_attr] of COLUMNS) {
+            let value = col_attr(this.data);
+            this.row.insertCell().appendChild(document.createTextNode(value));
+        }
+    }
+}
+
+class CropTable {
+    table: HTMLTableElement;
+    rows: CropRow[];
+
+    constructor(table: HTMLTableElement) {
+        this.table = table;
+        this.rows = [];
+
+        this.recalculate(1);
+    }
+
+    public recalculate(current_day: number) {
+        this.table.replaceChildren();
+
+        // Table header
+        let thead = this.table.createTHead();
+        let row = thead.insertRow();
+        for (let [col_name, _] of COLUMNS) {
+            row.insertCell().appendChild(document.createTextNode(col_name));
+        }
+
+        let tbody = this.table.createTBody();
+        for (let def of CROP_DEFINITIONS) {
+            let data = calculate(def, current_day);
+            let row = tbody.insertRow();
+            this.rows.push(new CropRow(row, data));
+        }
+    }
+}
+
+function initialize() {
+    console.log("Initializing!");
+
+    // Find all the elements I need
     let table = document.getElementById("crop-table");
     if (!(table instanceof HTMLTableElement)) {
         throw new Error("crop-table should be a <table>");
     }
 
-    table.replaceChildren();
+    let input_panel = document.getElementById("input-panel")!;
+    let current_day_input = document.querySelector<HTMLInputElement>("#day")!;
 
-    // Get the inputs
-    let current_day = document.querySelector<HTMLInputElement>("#day")!.valueAsNumber;
+    // Create components
+    let table_component = new CropTable(table);
 
-    // Table header
-    let thead = table.createTHead();
-    let row = thead.insertRow();
-    for (let [col_name, _] of columns) {
-        row.insertCell().appendChild(document.createTextNode(col_name));
-    }
-
-    // Rows in the table body
-    let tbody = table.createTBody();
-    for (let data of crop_definitions) {
-        let output = calculate(data, current_day);
-        let row = tbody.insertRow();
-        for (let [_, col_attr] of columns) {
-            let value = col_attr(output);
-            row.insertCell().appendChild(document.createTextNode(value));
-        }
-    }
+    // Attach event listeners
+    input_panel.addEventListener("change", (event) => {
+        let current_day = current_day_input.valueAsNumber;
+        table_component.recalculate(current_day);
+    });
 }
 
-// Hydrate the table
+
+// Alrighty, we're ready to go! Wait for the DOM to finish loading (or see if it
+// already has.
 if (document.readyState === "loading") {
     // Loading hasn't finished yet
-    document.addEventListener("DOMContentLoaded", hydrateTable);
+    document.addEventListener("DOMContentLoaded", initialize);
 } else {
     // `DOMContentLoaded` has already fired
-    hydrateTable();
+    initialize();
 }
-
-// Add listener to the inputs
-// TODO: don't recreate the table! just edit it
-document.getElementById("input-panel")!.addEventListener("change", hydrateTable);

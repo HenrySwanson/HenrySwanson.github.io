@@ -15,6 +15,7 @@ h1 {
 }
 
 table {
+    margin: 0 auto;
     background-color: $PANEL_LIGHT;
     border-collapse: separate;
     border-spacing: 0 10px;
@@ -49,7 +50,7 @@ tbody td:last-child {
 }
 
 #input-panel {
-    margin: 10px 0 10px auto;
+    margin-bottom: 10px;
 
     input {
         width: 40px;
