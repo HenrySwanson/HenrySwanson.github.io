@@ -4,7 +4,9 @@
 <head>
   <meta charset="utf-8">
   <title>Henry Swanson</title>
-  <link rel="stylesheet" type="text/css" href="/style.css" />
+  {% if page.extra.stylesheet %}
+  <link rel="stylesheet" type="text/css" href="{{page.extra.stylesheet}}" />
+  {% endif %}
 </head>
 
 <body>
