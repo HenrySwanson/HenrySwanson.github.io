@@ -31,19 +31,44 @@ type CropData = {
     seed_cost: number,
     sell_price: number,
     days_to_grow: number,
+    regrowth_period: number | "N/A",
+    num_harvests: number,
+    num_crops: number,
     profit: number,
     daily_profit: number,
 };
 
-function calculate(crop: CropDefinition): CropData {
-    let profit = crop.sell_price - crop.seed_cost;
-    let daily_profit = profit / crop.days_to_grow;
+function calculate(crop: CropDefinition, start_day: number): CropData {
+    let days_left = 28 - start_day;  // planting on day 28 is zero days left
+
+    // What's the profit? Depends how many harvests we can get this season.
+    let harvests = 0;
+    let useful_days = 0;
+    if (days_left > crop.days_to_grow) {
+        harvests += 1;
+        useful_days += crop.days_to_grow;
+        if (crop.regrowth_period) {
+            let extra_harvests = Math.floor((days_left - crop.days_to_grow) / crop.regrowth_period);
+            harvests += extra_harvests;
+            useful_days += extra_harvests * crop.regrowth_period;
+        }
+    }
+
+    // We can sometimes get multiple crops per harvest
+    let num_crops = harvests * (crop.yield ?? 1) * (1 + (crop.percent_chance_extra ?? 0) / 100);
+
+    let profit = num_crops * crop.sell_price - crop.seed_cost;
+    let daily_profit = profit / useful_days;
+
     return {
         name: crop.name,
         season: Season.fromString(crop.season),
         seed_cost: crop.seed_cost,
         sell_price: crop.sell_price,
         days_to_grow: crop.days_to_grow,
+        regrowth_period: crop.regrowth_period ?? "N/A",
+        num_harvests: harvests,
+        num_crops,
         profit,
         daily_profit,
     };
@@ -56,6 +81,9 @@ let columns: Column[] = [
     ["Seed Cost", "seed_cost"],
     ["Sell Price", "sell_price"],
     ["Days to Grow", "days_to_grow"],
+    ["Regrowth Period", "regrowth_period"],
+    ["Num Harvests", "num_harvests"],
+    ["Num Crops", "num_crops"],
     ["Profit", "profit"],
     ["Daily Profit", "daily_profit"]
 ];
@@ -79,7 +107,7 @@ function hydrateTable() {
     // Rows in the table body
     let tbody = table.createTBody();
     for (let data of crop_definitions) {
-        let output = calculate(data);
+        let output = calculate(data, 1);
         let row = tbody.insertRow();
         for (let [_, col_attr] of columns) {
             let value = output[col_attr];

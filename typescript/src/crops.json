@@ -1,16 +1,100 @@
 [
-    {
-       "name": "Parsnip",
-       "season": "Spring",
-       "seed_cost": 20,
-       "sell_price": 35,
-       "days_to_grow": 4
-    },
-    {
-        "name": "Cauliflower",
-        "season": "Spring",
-        "seed_cost": 80,
-        "sell_price": 175,
-        "days_to_grow": 12
-     }
+   {
+      "name": "Blue Jazz",
+      "season": "Spring",
+      "seed_cost": 30,
+      "sell_price": 50,
+      "days_to_grow": 7
+   },
+   {
+      "name": "Carrot",
+      "season": "Spring",
+      "seed_cost": 0,
+      "sell_price": 35,
+      "days_to_grow": 3
+   },
+   {
+      "name": "Cauliflower",
+      "season": "Spring",
+      "seed_cost": 80,
+      "sell_price": 175,
+      "days_to_grow": 12
+   },
+   {
+      "name": "Coffee Bean",
+      "season": "Spring",
+      "seed_cost": 15,
+      "sell_price": 15,
+      "days_to_grow": 10,
+      "regrowth_period": 2,
+      "yield": 4,
+      "percent_chance_extra": 2
+   },
+   {
+      "name": "Garlic",
+      "season": "Spring",
+      "seed_cost": 40,
+      "sell_price": 60,
+      "days_to_grow": 4
+   },
+   {
+      "name": "Green Bean",
+      "season": "Spring",
+      "seed_cost": 60,
+      "sell_price": 40,
+      "days_to_grow": 10,
+      "regrowth_period": 3
+   },
+   {
+      "name": "Kale",
+      "season": "Spring",
+      "seed_cost": 70,
+      "sell_price": 110,
+      "days_to_grow": 6
+   },
+   {
+      "name": "Parsnip",
+      "season": "Spring",
+      "seed_cost": 20,
+      "sell_price": 35,
+      "days_to_grow": 4
+   },
+   {
+      "name": "Potato",
+      "season": "Spring",
+      "seed_cost": 50,
+      "sell_price": 80,
+      "days_to_grow": 6,
+      "percent_chance_extra": 25
+   },
+   {
+      "name": "Rhubarb",
+      "season": "Spring",
+      "seed_cost": 100,
+      "sell_price": 220,
+      "days_to_grow": 13
+   },
+   {
+      "name": "Rice",
+      "season": "Spring",
+      "seed_cost": 40,
+      "sell_price": 30,
+      "days_to_grow": 6
+   },
+   {
+      "name": "Strawberry",
+      "season": "Spring",
+      "seed_cost": 100,
+      "sell_price": 120,
+      "days_to_grow": 8,
+      "regrowth_period": 4,
+      "percent_chance_extra": 2
+   },
+   {
+      "name": "Tulip",
+      "season": "Spring",
+      "seed_cost": 20,
+      "sell_price": 30,
+      "days_to_grow": 6
+   }
 ]
