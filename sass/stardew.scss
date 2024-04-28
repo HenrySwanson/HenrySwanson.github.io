@@ -49,9 +49,22 @@ tbody td:last-child {
     border-top-right-radius: 10px;
 }
 
+table.sortable thead td[aria-sort="descending"]::after {
+    content: "▼";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+  }
+  
+  table.sortable thead td[aria-sort="ascending"]::after {
+    content: "▲";
+    color: currentcolor;
+    font-size: 100%;
+    top: 0;
+  }
+
 #input-panel {
     margin-bottom: 10px;
-
     input {
         width: 40px;
     }

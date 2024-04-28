@@ -141,30 +141,80 @@ class CropRow {
 
 class CropTable {
     table: HTMLTableElement;
+    tbody: HTMLTableSectionElement;
     rows: CropRow[];
 
     constructor(table: HTMLTableElement) {
         this.table = table;
         this.rows = [];
 
-        this.recalculate(1);
-    }
-
-    public recalculate(current_day: number) {
-        this.table.replaceChildren();
-
-        // Table header
+        // Create table header and body
         let thead = this.table.createTHead();
+        this.tbody = this.table.createTBody();
+
+        // Populate head once, here
         let row = thead.insertRow();
-        for (let [col_name, _] of COLUMNS) {
-            row.insertCell().appendChild(document.createTextNode(col_name));
+        for (let [idx, [col_name, _]] of COLUMNS.entries()) {
+            let cell = row.insertCell();
+            cell.appendChild(document.createTextNode(col_name));
+            cell.addEventListener("click", (event) => {
+                this.sortRows(idx);
+            });
         }
 
-        let tbody = this.table.createTBody();
+        // Body needs to be recalculated often, so put that in its
+        // own function.
+        this.recalculateRows(1);
+    }
+
+    public recalculateRows(current_day: number) {
+        this.tbody.replaceChildren();
         for (let def of CROP_DEFINITIONS) {
             let data = calculate(def, current_day);
-            let row = tbody.insertRow();
+            let row = this.tbody.insertRow();
             this.rows.push(new CropRow(row, data));
+        }
+    }
+
+    private sortRows(idx: number) {
+        // Update the buttons in the header (also this is how we
+        // discover which way we're sorting)
+        let headers = this.table.querySelectorAll('thead td');
+        let sort_ascending = true;
+        for (let [i, header] of headers.entries()) {
+            if (idx === i) {
+                // This is the right column; flip the sort order, or
+                // if it's not set, sort asscending by default.
+                let sort_dir = header.getAttribute('aria-sort');
+                if (sort_dir === "descending") {
+                    header.setAttribute("aria-sort", "ascending");
+                    sort_ascending = false;
+                } else {
+                    header.setAttribute("aria-sort", "descending");
+                }
+            } else {
+                // Clear the sort attribute
+                header.removeAttribute("aria-sort");
+            }
+        }
+
+        // Sort our collection of rows
+        this.rows.sort((a, b) => {
+            let a_key = a.row.children[idx].textContent!;
+            let b_key = b.row.children[idx].textContent!;
+
+            let ret = a_key > b_key ? 1 : -1;
+            
+            if (sort_ascending) {
+                return ret;
+            } else {
+                return -ret;
+            }
+        });
+
+        // Then use that to rearrange the nodes in the body
+        for (let row of this.rows) {
+            this.tbody.appendChild(row.row);
         }
     }
 }
@@ -187,7 +237,7 @@ function initialize() {
     // Attach event listeners
     input_panel.addEventListener("change", (event) => {
         let current_day = current_day_input.valueAsNumber;
-        table_component.recalculate(current_day);
+        table_component.recalculateRows(current_day);
     });
 }
 

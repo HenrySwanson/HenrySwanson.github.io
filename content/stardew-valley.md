@@ -6,6 +6,7 @@ stylesheet = "/stardew.css"
 
 <script src="/crops.js" async></script>
 
+<div>
 <table id="input-panel">
   <tr>
     <td><label for="season">Season:</label></td>
@@ -21,4 +22,4 @@ stylesheet = "/stardew.css"
   </tr>
 </table>
 
-<table id="crop-table"></table>
+<table id="crop-table" class="sortable"></table>
