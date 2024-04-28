@@ -1,13 +1,57 @@
+$PANEL_LIGHT : #363;
+$PANEL_DARK: #252;
+$BACKGROUND : #8a8;
+
+body {
+    font-family: sans-serif;
+    background-color: $BACKGROUND;
+    padding: 5px;
+    color: #ddd;
+}
+
+h1 {
+    text-align: center;
+    color: #222;
+}
+
 table {
-    border-collapse: collapse;
+    background-color: $PANEL_LIGHT;
+    border-collapse: separate;
+    border-spacing: 0 10px;
+    padding: 10px;
+    border-radius: 15px;
+    border: 2px solid $PANEL_DARK;
 }
 
-table,
-th,
-td {
-    border: 1px solid black;
-}
-
-thead {
+thead td {
+    padding: 0 10px;
     font-weight: bold;
+    text-align: center;
+    color: white;
+}
+
+tbody td {
+    padding: 10px;
+    background-color: $PANEL_DARK;
+    white-space: nowrap;
+    border-left: 1px dashed $PANEL_LIGHT;
+}
+
+tbody td:first-child {
+    border-left: none;
+    border-top-left-radius: 10px;
+    border-bottom-left-radius: 10px;
+}
+
+tbody td:last-child {
+    border-bottom-right-radius: 10px;
+    border-top-right-radius: 10px;
+}
+
+#input-panel {
+    margin: 10px 0 10px auto;
+
+    input {
+        width: 40px;
+    }
 }
