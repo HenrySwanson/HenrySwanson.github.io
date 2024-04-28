@@ -97,6 +97,9 @@ function hydrateTable() {
 
     table.replaceChildren();
 
+    // Get the inputs
+    let current_day = document.querySelector<HTMLInputElement>("#day")!.valueAsNumber;
+
     // Table header
     let thead = table.createTHead();
     let row = thead.insertRow();
@@ -107,7 +110,7 @@ function hydrateTable() {
     // Rows in the table body
     let tbody = table.createTBody();
     for (let data of crop_definitions) {
-        let output = calculate(data, 1);
+        let output = calculate(data, current_day);
         let row = tbody.insertRow();
         for (let [_, col_attr] of columns) {
             let value = output[col_attr];
@@ -124,3 +127,7 @@ if (document.readyState === "loading") {
     // `DOMContentLoaded` has already fired
     hydrateTable();
 }
+
+// Add listener to the inputs
+// TODO: don't recreate the table! just edit it
+document.getElementById("input-panel")!.addEventListener("change", hydrateTable);
