@@ -26,12 +26,15 @@ namespace Season {
 }
 
 type CropData = {
-    name: String,
+    name: string,
     season: Season,
     seed_cost: number,
     sell_price: number,
     days_to_grow: number,
-    regrowth_period: number | "N/A",
+    regrowth_period: number | null,
+    yield: number | null,
+    percent_chance_extra: number | null,
+    useful_days: number,
     num_harvests: number,
     num_crops: number,
     profit: number,
@@ -42,20 +45,20 @@ function calculate(crop: CropDefinition, start_day: number): CropData {
     let days_left = 28 - start_day;  // planting on day 28 is zero days left
 
     // What's the profit? Depends how many harvests we can get this season.
-    let harvests = 0;
+    let num_harvests = 0;
     let useful_days = 0;
     if (days_left > crop.days_to_grow) {
-        harvests += 1;
+        num_harvests += 1;
         useful_days += crop.days_to_grow;
         if (crop.regrowth_period) {
             let extra_harvests = Math.floor((days_left - crop.days_to_grow) / crop.regrowth_period);
-            harvests += extra_harvests;
+            num_harvests += extra_harvests;
             useful_days += extra_harvests * crop.regrowth_period;
         }
     }
 
     // We can sometimes get multiple crops per harvest
-    let num_crops = harvests * (crop.yield ?? 1) * (1 + (crop.percent_chance_extra ?? 0) / 100);
+    let num_crops = num_harvests * (crop.yield ?? 1) + ((crop.percent_chance_extra ?? 0) / 100);
 
     let profit = num_crops * crop.sell_price - crop.seed_cost;
     let daily_profit = profit / useful_days;
@@ -66,26 +69,53 @@ function calculate(crop: CropDefinition, start_day: number): CropData {
         seed_cost: crop.seed_cost,
         sell_price: crop.sell_price,
         days_to_grow: crop.days_to_grow,
-        regrowth_period: crop.regrowth_period ?? "N/A",
-        num_harvests: harvests,
+        regrowth_period: crop.regrowth_period ?? null,
+        yield: crop.yield ?? null,
+        percent_chance_extra: crop.percent_chance_extra ?? null,
+        useful_days,
+        num_harvests,
         num_crops,
         profit,
         daily_profit,
     };
 }
 
-type Column = [string, keyof CropData];
+type Column = [string, ((crop: CropData) => string)];
 let columns: Column[] = [
-    ["Name", "name"],
-    ["Season", "season"],
-    ["Seed Cost", "seed_cost"],
-    ["Sell Price", "sell_price"],
-    ["Days to Grow", "days_to_grow"],
-    ["Regrowth Period", "regrowth_period"],
-    ["Num Harvests", "num_harvests"],
-    ["Num Crops", "num_crops"],
-    ["Profit", "profit"],
-    ["Daily Profit", "daily_profit"]
+    ["Name", (crop: CropData) => { return crop.name; }],
+    ["Season", (crop: CropData) => {
+        return Season[crop.season];
+    }],
+    ["Seed Cost", (crop: CropData) => { return crop.seed_cost.toString(); }],
+    ["Sell Price", (crop: CropData) => { return crop.sell_price.toString(); }],
+    ["Days to Grow", (crop: CropData) => { return crop.days_to_grow.toString(); }],
+    ["Regrowth Period", (crop: CropData) => {
+        return crop.regrowth_period?.toString() ?? "-";
+    }],
+    ["Yield", (crop: CropData) => {
+        let yield_num = crop.yield ?? 1;
+        if (crop.percent_chance_extra) {
+            return `${yield_num} + ${crop.percent_chance_extra}%`;
+        } else {
+            return yield_num.toString();
+        }
+    }],
+    ["Useful Days", (crop: CropData) => { return crop.useful_days.toString(); }],
+    ["Num Harvests", (crop: CropData) => { return crop.num_harvests.toString(); }],
+    ["Num Crops", (crop: CropData) => {
+        let num_crops = crop.num_crops;
+        if (Number.isInteger(num_crops)) {
+            return num_crops.toString();
+        }
+        return crop.num_crops.toFixed(2);
+    }],
+    ["Profit", (crop: CropData) => { return crop.profit.toFixed(2); }],
+    ["Daily Profit", (crop: CropData) => {
+        if (Number.isFinite(crop.daily_profit)) {
+            return crop.daily_profit.toFixed(2);
+        }
+        return "-";
+    }]
 ];
 
 function hydrateTable() {
@@ -113,8 +143,8 @@ function hydrateTable() {
         let output = calculate(data, current_day);
         let row = tbody.insertRow();
         for (let [_, col_attr] of columns) {
-            let value = output[col_attr];
-            row.insertCell().appendChild(document.createTextNode(value.toString()));
+            let value = col_attr(output);
+            row.insertCell().appendChild(document.createTextNode(value));
         }
     }
 }
