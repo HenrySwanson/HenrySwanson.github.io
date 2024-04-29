@@ -60,7 +60,7 @@ function calculate(crop: CropDefinition, start_day: number): CropData {
     }
 
     // We can sometimes get multiple crops per harvest
-    let num_crops = num_harvests * (crop.yield ?? 1) + ((crop.percent_chance_extra ?? 0) / 100);
+    let num_crops = num_harvests * ((crop.yield ?? 1) + (crop.percent_chance_extra ?? 0) / 100);
 
     let profit = num_crops * crop.sell_price - crop.seed_cost;
     let daily_profit = profit / useful_days;
@@ -85,42 +85,103 @@ function calculate(crop: CropDefinition, start_day: number): CropData {
 /* ======== GUI ======== */
 
 // Defines the set of columns for the whole table.
-type Column = [string, ((crop: CropData) => string)];
+type Column = {
+    name: string;
+    cellText: (crop: CropData) => string;
+    compare: (a: CropData, b: CropData) => number;
+};
+
 const COLUMNS: Column[] = [
-    ["Name", (crop: CropData) => { return crop.name; }],
-    ["Season", (crop: CropData) => {
-        return Season[crop.season];
-    }],
-    ["Seed Cost", (crop: CropData) => { return crop.seed_cost.toString(); }],
-    ["Sell Price", (crop: CropData) => { return crop.sell_price.toString(); }],
-    ["Days to Grow", (crop: CropData) => { return crop.days_to_grow.toString(); }],
-    ["Regrowth Period", (crop: CropData) => {
-        return crop.regrowth_period?.toString() ?? "-";
-    }],
-    ["Yield", (crop: CropData) => {
-        let yield_num = crop.yield ?? 1;
-        if (crop.percent_chance_extra) {
-            return `${yield_num} + ${crop.percent_chance_extra}%`;
-        } else {
-            return yield_num.toString();
+    {
+        name: "Name",
+        cellText: (crop: CropData) => crop.name,
+        compare: (a: CropData, b: CropData) => a.name.localeCompare(b.name),
+    },
+    {
+        name: "Season",
+        cellText: (crop: CropData) => Season[crop.season],
+        compare: (a: CropData, b: CropData) => a.season.valueOf() - b.season.valueOf(),
+    },
+    {
+        name: "Seed Cost",
+        cellText: (crop: CropData) => crop.seed_cost.toString(),
+        compare: (a: CropData, b: CropData) => a.seed_cost - b.seed_cost,
+    },
+    {
+        name: "Sell Price",
+        cellText: (crop: CropData) => crop.sell_price.toString(),
+        compare: (a: CropData, b: CropData) => a.sell_price - b.sell_price,
+    },
+    {
+        name: "Days to Grow",
+        cellText: (crop: CropData) => crop.days_to_grow.toString(),
+        compare: (a: CropData, b: CropData) => a.days_to_grow - b.days_to_grow,
+    },
+    {
+        name: "Regrowth Period",
+        cellText: (crop: CropData) => crop.regrowth_period?.toString() ?? "-",
+        compare: (a: CropData, b: CropData) => {
+            if (b.regrowth_period === null) {
+                return -1;
+            } else if (a.regrowth_period === null) {
+                return 1;
+            }
+            return a.regrowth_period - b.regrowth_period;
         }
-    }],
-    ["Useful Days", (crop: CropData) => { return crop.useful_days.toString(); }],
-    ["Num Harvests", (crop: CropData) => { return crop.num_harvests.toString(); }],
-    ["Num Crops", (crop: CropData) => {
-        let num_crops = crop.num_crops;
-        if (Number.isInteger(num_crops)) {
-            return num_crops.toString();
+    },
+    {
+        name: "Yield",
+        cellText: (crop: CropData) => {
+            let yield_num = crop.yield ?? 1;
+            if (crop.percent_chance_extra) {
+                return `${yield_num} + ${crop.percent_chance_extra}%`;
+            } else {
+                return yield_num.toString();
+            }
+        },
+        compare: (a: CropData, b: CropData) => {
+            // slight hack -- represent as a + b/100
+            let a_num = (a.yield ?? 1) + (a.percent_chance_extra ?? 0) / 100;
+            let b_num = (b.yield ?? 1) + (b.percent_chance_extra ?? 0) / 100;
+            return a_num - b_num;
         }
-        return crop.num_crops.toFixed(2);
-    }],
-    ["Profit", (crop: CropData) => { return crop.profit.toFixed(2); }],
-    ["Daily Profit", (crop: CropData) => {
-        if (Number.isFinite(crop.daily_profit)) {
-            return crop.daily_profit.toFixed(2);
-        }
-        return "-";
-    }]
+    },
+    {
+        name: "Useful Days",
+        cellText: (crop: CropData) => crop.useful_days.toString(),
+        compare: (a: CropData, b: CropData) => a.useful_days - b.useful_days,
+    },
+    {
+        name: "Num Harvests",
+        cellText: (crop: CropData) => crop.num_harvests.toString(),
+        compare: (a: CropData, b: CropData) => a.num_crops - b.num_crops,
+    },
+    {
+        name: "Num Crops",
+        cellText: (crop: CropData) => {
+            let num_crops = crop.num_crops;
+            if (Number.isInteger(num_crops)) {
+                return num_crops.toString();
+            }
+            return crop.num_crops.toFixed(2);
+        },
+        compare: (a: CropData, b: CropData) => a.num_crops - b.num_crops,
+    },
+    {
+        name: "Profit",
+        cellText: (crop: CropData) => crop.profit.toFixed(2),
+        compare: (a: CropData, b: CropData) => a.profit - b.profit,
+    },
+    {
+        name: "Daily Profit",
+        cellText: (crop: CropData) => {
+            if (Number.isFinite(crop.daily_profit)) {
+                return crop.daily_profit.toFixed(2);
+            }
+            return "-";
+        },
+        compare: (a: CropData, b: CropData) => a.daily_profit - b.daily_profit,
+    }
 ];
 
 class CropRow {
@@ -132,10 +193,20 @@ class CropRow {
         this.row = row;
 
         // now populate the row
-        for (let [_, col_attr] of COLUMNS) {
-            let value = col_attr(this.data);
+        for (let col of COLUMNS) {
+            let value = col.cellText(this.data);
             this.row.insertCell().appendChild(document.createTextNode(value));
         }
+    }
+}
+
+type SortDirection = "ascending" | "descending";
+function flipDirection(x: SortDirection): SortDirection {
+    switch (x) {
+        case "ascending":
+            return "descending";
+        case "descending":
+            return "ascending";
     }
 }
 
@@ -143,10 +214,12 @@ class CropTable {
     table: HTMLTableElement;
     tbody: HTMLTableSectionElement;
     rows: CropRow[];
+    current_sort: [number, SortDirection] | null;
 
     constructor(table: HTMLTableElement) {
         this.table = table;
         this.rows = [];
+        this.current_sort = null;
 
         // Create table header and body
         let thead = this.table.createTHead();
@@ -154,11 +227,28 @@ class CropTable {
 
         // Populate head once, here
         let row = thead.insertRow();
-        for (let [idx, [col_name, _]] of COLUMNS.entries()) {
+        for (let [idx, col] of COLUMNS.entries()) {
             let cell = row.insertCell();
-            cell.appendChild(document.createTextNode(col_name));
+            cell.appendChild(document.createTextNode(col.name));
             cell.addEventListener("click", (event) => {
-                this.sortRows(idx);
+                // Which way do we sort?
+                let dir: SortDirection;
+                if (this.current_sort !== null && this.current_sort[0] === idx) {
+                    dir = flipDirection(this.current_sort[1]);
+                } else {
+                    dir = "ascending";
+                }
+                this.current_sort = [idx, dir];
+
+                // Clear all the header buttons, except ourselves
+                let headers = this.table.querySelectorAll('thead td');
+                for (let header of headers) {
+                    header.removeAttribute("aria-sort");
+                }
+                headers[idx].setAttribute("aria-sort", dir);
+
+                // Now sort the rows
+                this.sortRows();
             });
         }
 
@@ -167,49 +257,34 @@ class CropTable {
         this.recalculateRows(1);
     }
 
+    // TODO: don't recreate rows; change the text instead
     public recalculateRows(current_day: number) {
+        // Discard the old rows and create new ones
         this.tbody.replaceChildren();
+        this.rows = [];
         for (let def of CROP_DEFINITIONS) {
             let data = calculate(def, current_day);
             let row = this.tbody.insertRow();
             this.rows.push(new CropRow(row, data));
         }
+
+        // We also need to re-sort them. 
+        this.sortRows();
     }
 
-    private sortRows(idx: number) {
-        // Update the buttons in the header (also this is how we
-        // discover which way we're sorting)
-        let headers = this.table.querySelectorAll('thead td');
-        let sort_ascending = true;
-        for (let [i, header] of headers.entries()) {
-            if (idx === i) {
-                // This is the right column; flip the sort order, or
-                // if it's not set, sort asscending by default.
-                let sort_dir = header.getAttribute('aria-sort');
-                if (sort_dir === "descending") {
-                    header.setAttribute("aria-sort", "ascending");
-                    sort_ascending = false;
-                } else {
-                    header.setAttribute("aria-sort", "descending");
-                }
-            } else {
-                // Clear the sort attribute
-                header.removeAttribute("aria-sort");
-            }
+    private sortRows() {
+
+        if (this.current_sort === null) {
+            return;
         }
+        let [idx, dir] = this.current_sort;
 
-        // Sort our collection of rows
+        // We first sort our own collection, then use that to re-insert
+        // our row elements.
+        let col = COLUMNS[idx];
         this.rows.sort((a, b) => {
-            let a_key = a.row.children[idx].textContent!;
-            let b_key = b.row.children[idx].textContent!;
-
-            let ret = a_key > b_key ? 1 : -1;
-            
-            if (sort_ascending) {
-                return ret;
-            } else {
-                return -ret;
-            }
+            let compare = col.compare(a.data, b.data);
+            return dir === "ascending" ? compare : -compare;
         });
 
         // Then use that to rearrange the nodes in the body
