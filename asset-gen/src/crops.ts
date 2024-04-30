@@ -268,7 +268,8 @@ class CropTable {
         }
 
         // We'll leave the body empty because it'll be recomputed from
-        // repopulateTable()
+        // repopulateTable(), and we need the settings to be able to
+        // create the rows anyways.
     }
 
     // TODO: don't recreate rows; change the text instead
@@ -291,14 +292,18 @@ class CropTable {
     }
 
     private sortRows() {
-        // If no sort selected, don't sort. EZ.
+        // If no sort selected, default is to sort by name
+        let idx: number;
+        let dir: SortDirection;
         if (this.current_sort === null) {
-            return;
+            idx = 0;
+            dir = "ascending";
+        } else {
+            [idx, dir] = this.current_sort;
         }
 
         // We first sort our own collection, then use that to re-insert
         // our row elements.
-        let [idx, dir] = this.current_sort;
         let col = COLUMNS[idx];
         this.rows.sort((a, b) => {
             let compare = col.compare(a.data, b.data);
@@ -325,20 +330,28 @@ function initialize() {
     let season_input = document.querySelector<HTMLInputElement>("#season")!;
     let current_day_input = document.querySelector<HTMLInputElement>("#day")!;
 
-    function getSettings(): Settings {
-        return {
+    // Create table component
+    let table_component = new CropTable(table);
+
+    // Applies the input settings to the document
+    function readAndApplySettings() {
+        // Get the settings
+        let settings: Settings = {
             season: Season.fromString(season_input.value),
             start_day: current_day_input.valueAsNumber
         };
+
+        // Repopulate table and change style
+        table_component.repopulateTable(settings);
+        document.documentElement.className = season_input.value.toLowerCase();
     }
 
-    // Create table and populate it with the (default) settings
-    let table_component = new CropTable(table);
-    table_component.repopulateTable(getSettings());
+    // Run it once to apply the default settings.
+    readAndApplySettings();
 
     // Attach event listeners
     input_panel.addEventListener("change", (event) => {
-        table_component.repopulateTable(getSettings());
+        readAndApplySettings();
     });
 }
 
