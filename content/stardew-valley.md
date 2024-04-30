@@ -13,6 +13,9 @@ stylesheet = "/stardew.css"
     <td>
       <select id="season" name="season">
         <option value="spring">Spring</option>
+        <option value="summer">Summer</option>
+        <option value="fall">Fall</option>
+        <option value="winter">Winter</option>
       </select>
     </td>
   </tr>

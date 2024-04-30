@@ -23,6 +23,7 @@
     {
         "name": "Coffee Bean",
         "season": "Spring",
+        "multiseason": 2,
         "seed_cost": 15,
         "sell_price": 15,
         "days_to_grow": 10,
@@ -96,5 +97,205 @@
         "seed_cost": 20,
         "sell_price": 30,
         "days_to_grow": 6
+    },
+    {
+        "name": "Blueberry",
+        "season": "Summer",
+        "seed_cost": 80,
+        "sell_price": 50,
+        "days_to_grow": 13,
+        "regrowth_period": 4,
+        "yield": 3,
+        "percent_chance_extra": 2
+    },
+    {
+        "name": "Corn",
+        "season": "Summer",
+        "multiseason": 2,
+        "seed_cost": 150,
+        "sell_price": 50,
+        "days_to_grow": 14,
+        "regrowth_period": 4
+    },
+    {
+        "name": "Hops",
+        "season": "Summer",
+        "seed_cost": 60,
+        "sell_price": 25,
+        "days_to_grow": 11,
+        "regrowth_period": 1
+    },
+    {
+        "name": "Hot Pepper",
+        "season": "Summer",
+        "seed_cost": 40,
+        "sell_price": 40,
+        "days_to_grow": 5,
+        "regrowth_period": 3,
+        "percent_chance_extra": 3
+    },
+    {
+        "name": "Melon",
+        "season": "Summer",
+        "seed_cost": 80,
+        "sell_price": 250,
+        "days_to_grow": 12
+    },
+    {
+        "name": "Poppy",
+        "season": "Summer",
+        "seed_cost": 100,
+        "sell_price": 140,
+        "days_to_grow": 7
+    },
+    {
+        "name": "Radish",
+        "season": "Summer",
+        "seed_cost": 40,
+        "sell_price": 90,
+        "days_to_grow": 6
+    },
+    {
+        "name": "Red Cabbage",
+        "season": "Summer",
+        "seed_cost": 100,
+        "sell_price": 260,
+        "days_to_grow": 9
+    },
+    {
+        "name": "Starfruit",
+        "season": "Summer",
+        "seed_cost": 400,
+        "sell_price": 750,
+        "days_to_grow": 13
+    },
+    {
+        "name": "Summer Spangle",
+        "season": "Summer",
+        "seed_cost": 50,
+        "sell_price": 90,
+        "days_to_grow": 8
+    },
+    {
+        "name": "Summer Squash",
+        "season": "Summer",
+        "seed_cost": 0,
+        "sell_price": 45,
+        "days_to_grow": 6
+    },
+    {
+        "name": "Sunflower",
+        "season": "Summer",
+        "multiseason": 2,
+        "seed_cost": 200,
+        "sell_price": 80,
+        "days_to_grow": 8
+    },
+    {
+        "name": "Tomato",
+        "season": "Summer",
+        "seed_cost": 50,
+        "sell_price": 60,
+        "days_to_grow": 11,
+        "regrowth_period": 4,
+        "percent_chance_extra": 5
+    },
+    {
+        "name": "Wheat",
+        "season": "Summer",
+        "multiseason": 2,
+        "seed_cost": 10,
+        "sell_price": 25,
+        "days_to_grow": 4
+    },
+    {
+        "name": "Amaranth",
+        "season": "Fall",
+        "seed_cost": 70,
+        "sell_price": 150,
+        "days_to_grow": 7
+    },
+    {
+        "name": "Artichoke",
+        "season": "Fall",
+        "seed_cost": 30,
+        "sell_price": 160,
+        "days_to_grow": 8
+    },
+    {
+        "name": "Beet",
+        "season": "Fall",
+        "seed_cost": 20,
+        "sell_price": 100,
+        "days_to_grow": 6
+    },
+    {
+        "name": "Bok Choy",
+        "season": "Fall",
+        "seed_cost": 50,
+        "sell_price": 80,
+        "days_to_grow": 4
+    },
+    {
+        "name": "Broccoli",
+        "season": "Fall",
+        "seed_cost": 0,
+        "sell_price": 70,
+        "days_to_grow": 8
+    },
+    {
+        "name": "Cranberries",
+        "season": "Fall",
+        "seed_cost": 240,
+        "sell_price": 75,
+        "days_to_grow": 7,
+        "regrowth_period": 5,
+        "yield": 2,
+        "percent_chance_extra": 10
+    },
+    {
+        "name": "Eggplant",
+        "season": "Fall",
+        "seed_cost": 20,
+        "sell_price": 60,
+        "days_to_grow": 5,
+        "regrowth_period": 5,
+        "percent_chance_extra": 0.2
+    },
+    {
+        "name": "Fairy Rose",
+        "season": "Fall",
+        "seed_cost": 200,
+        "sell_price": 290,
+        "days_to_grow": 12
+    },
+    {
+        "name": "Grape",
+        "season": "Fall",
+        "seed_cost": 60,
+        "sell_price": 80,
+        "days_to_grow": 10,
+        "regrowth_period": 3
+    },
+    {
+        "name": "Pumpkin",
+        "season": "Fall",
+        "seed_cost": 100,
+        "sell_price": 320,
+        "days_to_grow": 13
+    },
+    {
+        "name": "Yam",
+        "season": "Fall",
+        "seed_cost": 60,
+        "sell_price": 160,
+        "days_to_grow": 10
+    },
+    {
+        "name": "Powermelon",
+        "season": "Winter",
+        "seed_cost": 0,
+        "sell_price": 60,
+        "days_to_grow": 7
     }
 ]

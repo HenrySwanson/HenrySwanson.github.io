@@ -9,7 +9,7 @@ import CROP_DEFINITIONS from "./crops.json";
 type CropDefinition = typeof CROP_DEFINITIONS[number];
 
 enum Season {
-    SPRING, SUMMER, FALL
+    SPRING, SUMMER, FALL, WINTER
 }
 
 namespace Season {
@@ -21,6 +21,8 @@ namespace Season {
                 return Season.SUMMER;
             case "FALL":
                 return Season.FALL;
+            case "WINTER":
+                return Season.WINTER;
             default:
                 throw new Error(`Unknown season ${s}`);
         }
@@ -29,7 +31,6 @@ namespace Season {
 
 type CropData = {
     name: string,
-    season: Season,
     seed_cost: number,
     sell_price: number,
     days_to_grow: number,
@@ -44,11 +45,25 @@ type CropData = {
 };
 
 type Settings = {
-    start_day: number;
+    season: Season,
+    start_day: number,
 };
 
-function calculate(crop: CropDefinition, settings: Settings): CropData {
+function calculate(crop: CropDefinition, settings: Settings): CropData | "out-of-season" {
+    // Is this crop in-season?
+    let num_seasons = crop.multiseason ?? 1;
+    let first_season = Season.fromString(crop.season);
+    let seasons: Season[] = [];
+    for (let i = 0; i < num_seasons; i++) {
+        seasons.push(first_season.valueOf() + i);
+    }
+
+    if (!seasons.includes(settings.season)) {
+        return "out-of-season";
+    }
+
     // planting on day 28 is zero days left
+    // TODO: multiseason!
     let days_left = 28 - settings.start_day;
 
     // What's the profit? Depends how many harvests we can get this season.
@@ -72,7 +87,6 @@ function calculate(crop: CropDefinition, settings: Settings): CropData {
 
     return {
         name: crop.name,
-        season: Season.fromString(crop.season),
         seed_cost: crop.seed_cost,
         sell_price: crop.sell_price,
         days_to_grow: crop.days_to_grow,
@@ -101,11 +115,6 @@ const COLUMNS: Column[] = [
         name: "Name",
         cellText: (crop: CropData) => crop.name,
         compare: (a: CropData, b: CropData) => a.name.localeCompare(b.name),
-    },
-    {
-        name: "Season",
-        cellText: (crop: CropData) => Season[crop.season],
-        compare: (a: CropData, b: CropData) => a.season.valueOf() - b.season.valueOf(),
     },
     {
         name: "Seed Cost",
@@ -249,7 +258,6 @@ class CropTable {
                 // Clear all the header buttons, except ourselves
                 let headers = this.thead.querySelectorAll('td');
                 for (let header of headers) {
-                    console.log(this);
                     header.removeAttribute("aria-sort");
                 }
                 headers[idx].setAttribute("aria-sort", dir);
@@ -269,7 +277,11 @@ class CropTable {
         this.tbody.replaceChildren();
         this.rows = [];
         for (let def of CROP_DEFINITIONS) {
+            // Filter to crops that are in-season
             let data = calculate(def, settings);
+            if (data == "out-of-season") {
+                continue;
+            }
             let row = this.tbody.insertRow();
             this.rows.push(new CropRow(row, data));
         }
@@ -310,10 +322,12 @@ function initialize() {
     }
 
     let input_panel = document.getElementById("input-panel")!;
+    let season_input = document.querySelector<HTMLInputElement>("#season")!;
     let current_day_input = document.querySelector<HTMLInputElement>("#day")!;
 
     function getSettings(): Settings {
         return {
+            season: Season.fromString(season_input.value),
             start_day: current_day_input.valueAsNumber
         };
     }
