@@ -26,22 +26,31 @@ body {
     font-family: sans-serif;
     background-color: var(--background-color);
     padding: 5px;
-    color: #ddd;
+    color: #222;
 }
 
 h1 {
     text-align: center;
-    color: #222;
 }
 
-table {
+.rounded-box {
     margin: 0 auto;
-    border-collapse: separate;
-    border-spacing: 0 10px;
+    width: fit-content;
     padding: 10px;
     border-radius: 15px;
     background-color: var(--light-color);
     border: 2px solid var(--dark-color);
+    color: #ddd;
+
+    // just for input panel
+    display: flex;
+    flex-direction: row;
+    column-gap: 20px;
+}
+
+table {
+    border-collapse: separate;
+    border-spacing: 0 10px;
 }
 
 thead td {
