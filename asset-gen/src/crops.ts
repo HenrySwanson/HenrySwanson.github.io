@@ -43,8 +43,13 @@ type CropData = {
     daily_profit: number,
 };
 
-function calculate(crop: CropDefinition, start_day: number): CropData {
-    let days_left = 28 - start_day;  // planting on day 28 is zero days left
+type Settings = {
+    start_day: number;
+};
+
+function calculate(crop: CropDefinition, settings: Settings): CropData {
+    // planting on day 28 is zero days left
+    let days_left = 28 - settings.start_day;
 
     // What's the profit? Depends how many harvests we can get this season.
     let num_harvests = 0;
@@ -212,6 +217,7 @@ function flipDirection(x: SortDirection): SortDirection {
 
 class CropTable {
     table: HTMLTableElement;
+    thead: HTMLTableSectionElement;
     tbody: HTMLTableSectionElement;
     rows: CropRow[];
     current_sort: [number, SortDirection] | null;
@@ -222,11 +228,11 @@ class CropTable {
         this.current_sort = null;
 
         // Create table header and body
-        let thead = this.table.createTHead();
+        this.thead = this.table.createTHead();
         this.tbody = this.table.createTBody();
 
         // Populate head once, here
-        let row = thead.insertRow();
+        let row = this.thead.insertRow();
         for (let [idx, col] of COLUMNS.entries()) {
             let cell = row.insertCell();
             cell.appendChild(document.createTextNode(col.name));
@@ -241,8 +247,9 @@ class CropTable {
                 this.current_sort = [idx, dir];
 
                 // Clear all the header buttons, except ourselves
-                let headers = this.table.querySelectorAll('thead td');
+                let headers = this.thead.querySelectorAll('td');
                 for (let header of headers) {
+                    console.log(this);
                     header.removeAttribute("aria-sort");
                 }
                 headers[idx].setAttribute("aria-sort", dir);
@@ -252,18 +259,17 @@ class CropTable {
             });
         }
 
-        // Body needs to be recalculated often, so put that in its
-        // own function.
-        this.recalculateRows(1);
+        // We'll leave the body empty because it'll be recomputed from
+        // repopulateTable()
     }
 
     // TODO: don't recreate rows; change the text instead
-    public recalculateRows(current_day: number) {
+    public repopulateTable(settings: Settings) {
         // Discard the old rows and create new ones
         this.tbody.replaceChildren();
         this.rows = [];
         for (let def of CROP_DEFINITIONS) {
-            let data = calculate(def, current_day);
+            let data = calculate(def, settings);
             let row = this.tbody.insertRow();
             this.rows.push(new CropRow(row, data));
         }
@@ -273,14 +279,14 @@ class CropTable {
     }
 
     private sortRows() {
-
+        // If no sort selected, don't sort. EZ.
         if (this.current_sort === null) {
             return;
         }
-        let [idx, dir] = this.current_sort;
 
         // We first sort our own collection, then use that to re-insert
         // our row elements.
+        let [idx, dir] = this.current_sort;
         let col = COLUMNS[idx];
         this.rows.sort((a, b) => {
             let compare = col.compare(a.data, b.data);
@@ -306,13 +312,19 @@ function initialize() {
     let input_panel = document.getElementById("input-panel")!;
     let current_day_input = document.querySelector<HTMLInputElement>("#day")!;
 
-    // Create components
+    function getSettings(): Settings {
+        return {
+            start_day: current_day_input.valueAsNumber
+        };
+    }
+
+    // Create table and populate it with the (default) settings
     let table_component = new CropTable(table);
+    table_component.repopulateTable(getSettings());
 
     // Attach event listeners
     input_panel.addEventListener("change", (event) => {
-        let current_day = current_day_input.valueAsNumber;
-        table_component.recalculateRows(current_day);
+        table_component.repopulateTable(getSettings());
     });
 }
 
