@@ -47,24 +47,27 @@ type CropData = {
 type Settings = {
     season: Season,
     start_day: number,
+    multiseason_enabled: boolean,
 };
 
 function calculate(crop: CropDefinition, settings: Settings): CropData | "out-of-season" {
-    // Is this crop in-season?
-    let num_seasons = crop.multiseason ?? 1;
-    let first_season = Season.fromString(crop.season);
+    // When is this crop in-season?
     let seasons: Season[] = [];
+    let num_seasons = crop.multiseason ?? 1;
     for (let i = 0; i < num_seasons; i++) {
-        seasons.push(first_season.valueOf() + i);
+        seasons.push(Season.fromString(crop.season).valueOf() + i);
     }
 
+    // Bail out if we're out of season
     if (!seasons.includes(settings.season)) {
         return "out-of-season";
     }
 
-    // planting on day 28 is zero days left
-    // TODO: multiseason!
-    let days_left = 28 - settings.start_day;
+    // How many days do we have left?
+    let seasons_left = settings.multiseason_enabled
+        ? seasons.length - seasons.indexOf(settings.season)
+        : 1;
+    let days_left = 28 * seasons_left - settings.start_day;
 
     // What's the profit? Depends how many harvests we can get this season.
     let num_harvests = 0;
@@ -329,6 +332,7 @@ function initialize() {
     let input_panel = document.getElementById("input-panel")!;
     let season_input = document.querySelector<HTMLInputElement>("#season")!;
     let current_day_input = document.querySelector<HTMLInputElement>("#day")!;
+    let enable_multiseason = document.querySelector<HTMLInputElement>("#enable-multiseason")!;
 
     // Create table component
     let table_component = new CropTable(table);
@@ -338,7 +342,8 @@ function initialize() {
         // Get the settings
         let settings: Settings = {
             season: Season.fromString(season_input.value),
-            start_day: current_day_input.valueAsNumber
+            start_day: current_day_input.valueAsNumber,
+            multiseason_enabled: enable_multiseason.checked
         };
 
         // Repopulate table and change style

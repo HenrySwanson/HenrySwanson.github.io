@@ -6,7 +6,7 @@ stylesheet = "/stardew.css"
 
 <script src="/crops.js" async></script>
 
-Note: Only the "Season" and "Day" inputs work at the moment.
+Note: Only the "Season", "Day", and "Multi-season" inputs work at the moment.
 
 <div id="input-panel" class="rounded-box">
 <table>
@@ -28,8 +28,8 @@ Note: Only the "Season" and "Day" inputs work at the moment.
 </table>
 <table>
   <tr>
-    <td><label for="multiseason">Multi-season?:</label></td>
-    <td><input type="checkbox" id="multiseason" name="multiseason"/></td>
+    <td><label for="enable-multiseason">Multi-season?:</label></td>
+    <td><input type="checkbox" id="enable-multiseason" name="enable-multiseason"/></td>
   </tr>
   <tr>
     <td><label for="quality">Enable Quality?:</label></td>
