@@ -30,13 +30,7 @@ namespace Season {
 }
 
 type CropData = {
-    name: string,
-    seed_cost: number,
-    sell_price: number,
-    days_to_grow: number,
-    regrowth_period: number | null,
-    yield: number | null,
-    percent_chance_extra: number | null,
+    definition: CropDefinition,
     useful_days: number,
     num_harvests: number,
     num_crops: number,
@@ -89,13 +83,7 @@ function calculate(crop: CropDefinition, settings: Settings): CropData | "out-of
     let daily_profit = profit / useful_days;
 
     return {
-        name: crop.name,
-        seed_cost: crop.seed_cost,
-        sell_price: crop.sell_price,
-        days_to_grow: crop.days_to_grow,
-        regrowth_period: crop.regrowth_period ?? null,
-        yield: crop.yield ?? null,
-        percent_chance_extra: crop.percent_chance_extra ?? null,
+        definition: crop,
         useful_days,
         num_harvests,
         num_crops,
@@ -116,50 +104,50 @@ type Column = {
 const COLUMNS: Column[] = [
     {
         name: "Name",
-        cellText: (crop: CropData) => crop.name,
-        compare: (a: CropData, b: CropData) => a.name.localeCompare(b.name),
+        cellText: (crop: CropData) => crop.definition.name,
+        compare: (a: CropData, b: CropData) => a.definition.name.localeCompare(b.definition.name),
     },
     {
         name: "Seed Cost",
-        cellText: (crop: CropData) => crop.seed_cost.toString(),
-        compare: (a: CropData, b: CropData) => a.seed_cost - b.seed_cost,
+        cellText: (crop: CropData) => crop.definition.seed_cost.toString(),
+        compare: (a: CropData, b: CropData) => a.definition.seed_cost - b.definition.seed_cost,
     },
     {
         name: "Sell Price",
-        cellText: (crop: CropData) => crop.sell_price.toString(),
-        compare: (a: CropData, b: CropData) => a.sell_price - b.sell_price,
+        cellText: (crop: CropData) => crop.definition.sell_price.toString(),
+        compare: (a: CropData, b: CropData) => a.definition.sell_price - b.definition.sell_price,
     },
     {
         name: "Days to Grow",
-        cellText: (crop: CropData) => crop.days_to_grow.toString(),
-        compare: (a: CropData, b: CropData) => a.days_to_grow - b.days_to_grow,
+        cellText: (crop: CropData) => crop.definition.days_to_grow.toString(),
+        compare: (a: CropData, b: CropData) => a.definition.days_to_grow - b.definition.days_to_grow,
     },
     {
         name: "Regrowth Period",
-        cellText: (crop: CropData) => crop.regrowth_period?.toString() ?? "-",
+        cellText: (crop: CropData) => crop.definition.regrowth_period?.toString() ?? "-",
         compare: (a: CropData, b: CropData) => {
-            if (b.regrowth_period === null) {
+            if (b.definition.regrowth_period === undefined) {
                 return -1;
-            } else if (a.regrowth_period === null) {
+            } else if (a.definition.regrowth_period === undefined) {
                 return 1;
             }
-            return a.regrowth_period - b.regrowth_period;
+            return a.definition.regrowth_period - b.definition.regrowth_period;
         }
     },
     {
         name: "Yield",
         cellText: (crop: CropData) => {
-            let yield_num = crop.yield ?? 1;
-            if (crop.percent_chance_extra) {
-                return `${yield_num} + ${crop.percent_chance_extra}%`;
+            let yield_num = crop.definition.yield ?? 1;
+            if (crop.definition.percent_chance_extra) {
+                return `${yield_num} + ${crop.definition.percent_chance_extra}%`;
             } else {
                 return yield_num.toString();
             }
         },
         compare: (a: CropData, b: CropData) => {
             // slight hack -- represent as a + b/100
-            let a_num = (a.yield ?? 1) + (a.percent_chance_extra ?? 0) / 100;
-            let b_num = (b.yield ?? 1) + (b.percent_chance_extra ?? 0) / 100;
+            let a_num = (a.definition.yield ?? 1) + (a.definition.percent_chance_extra ?? 0) / 100;
+            let b_num = (b.definition.yield ?? 1) + (b.definition.percent_chance_extra ?? 0) / 100;
             return a_num - b_num;
         }
     },
