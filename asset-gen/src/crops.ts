@@ -38,10 +38,51 @@ type CropData = {
     daily_profit: number,
 };
 
+type QualityProbabilities = {
+    normal: number,
+    silver: number,
+    gold: number,
+    iridium: number,
+};
+
+const SILVER_MULTIPLIER = 1.25;
+const GOLD_MULTIPLIER = 1.5;
+const IRIDIUM_MULTIPLIER = 2.0;
+
+function computeQuality(farming_level: number): QualityProbabilities {
+    // https://stardewvalleywiki.com/Farming#Complete_Formula_2
+    let fertilizer_level = 0;
+
+    // Quality for a crop is determined by a series of weighted coin flips.
+    // The probabilities for the coins are computed here.
+    let p_gold_coin = 0.2 * (farming_level / 10.0) + 0.2 * fertilizer_level * ((farming_level + 2.0) / 12.0) + 0.01;
+    let p_silver_coin = Math.min(2 * p_gold_coin, 0.75);
+    let p_iridium_coin = p_gold_coin / 2;
+
+    // TODO: this is only enabled at certain fertilizer levels
+    p_iridium_coin = 0;
+
+    // However, these coins are flipped one at a time, so we have slightly more
+    // work to do to find out the final probabilities.
+
+    // Chance of iridium is just the local chance of iridium.
+    let iridium = p_iridium_coin;
+    // To get gold, don't be iridium, and pass the gold coin flip.
+    let gold = (1 - iridium) * p_gold_coin;
+    // Similarly, for silver, don't be iridum or gold, and pass the
+    // silver coin flip.
+    let silver = (1 - iridium - gold) * p_silver_coin;
+    // Base quality is everything else.
+    let normal = 1 - iridium - gold - silver;
+
+    return { normal, silver, gold, iridium };
+}
+
 type Settings = {
     season: Season,
     start_day: number,
     multiseason_enabled: boolean,
+    quality_probabilities: QualityProbabilities | null,
 };
 
 function calculate(crop: CropDefinition, settings: Settings): CropData | "out-of-season" {
@@ -63,7 +104,7 @@ function calculate(crop: CropDefinition, settings: Settings): CropData | "out-of
         : 1;
     let days_left = 28 * seasons_left - settings.start_day;
 
-    // What's the profit? Depends how many harvests we can get this season.
+    // In the number of days remaining, how many harvests do we get?
     let num_harvests = 0;
     let useful_days = 0;
     if (days_left >= crop.days_to_grow) {
@@ -76,17 +117,40 @@ function calculate(crop: CropDefinition, settings: Settings): CropData | "out-of
         }
     }
 
-    // We can sometimes get multiple crops per harvest
-    let num_crops = num_harvests * ((crop.yield ?? 1) + (crop.percent_chance_extra ?? 0) / 100);
+    // How much is a crop worth, on average?
+    let base_price = crop.sell_price;
+    let quality_price;
+    if (settings.quality_probabilities) {
+        let q = settings.quality_probabilities;
+        // zip together prices and probabilities
+        quality_price = [
+            [1.0, q.normal],
+            [SILVER_MULTIPLIER, q.silver],
+            [GOLD_MULTIPLIER, q.gold],
+            [IRIDIUM_MULTIPLIER, q.iridium],
+        ]
+            // prices are rounded down!
+            .map(([multiplier, p]) => Math.trunc(multiplier * base_price) * p)
+            .reduce((a, b) => a + b);
+    } else {
+        quality_price = base_price;
+    }
 
-    let profit = num_crops * crop.sell_price - crop.seed_cost;
+    // We can sometimes get multiple crops per harvest, but all the extra crops
+    // will be regular quality.
+    // TODO: is this true? i see conflicting sources online
+    let num_crops_per_harvest = (crop.yield ?? 1) + (crop.percent_chance_extra ?? 0) / 100.0;
+    let revenue_per_harvest = quality_price + (num_crops_per_harvest - 1) * base_price;
+
+    // Okay, let's calculate everything!
+    let profit = revenue_per_harvest * num_harvests - crop.seed_cost;
     let daily_profit = profit / useful_days;
 
     return {
         definition: crop,
         useful_days,
         num_harvests,
-        num_crops,
+        num_crops: num_crops_per_harvest * num_harvests,
         profit,
         daily_profit,
     };
@@ -321,22 +385,39 @@ function initialize() {
     let season_input = document.querySelector<HTMLInputElement>("#season")!;
     let current_day_input = document.querySelector<HTMLInputElement>("#day")!;
     let enable_multiseason = document.querySelector<HTMLInputElement>("#enable-multiseason")!;
+    let enable_quality = document.querySelector<HTMLInputElement>("#enable-quality")!;
+    let farming_level_input = document.querySelector<HTMLInputElement>("#farmer-level")!;
 
     // Create table component
     let table_component = new CropTable(table);
 
     // Applies the input settings to the document
     function readAndApplySettings() {
+        // Compute quality probablities
+        let quality = computeQuality(farming_level_input.valueAsNumber);
+        let quality_factor = quality.normal + quality.silver * 1.25 + quality.gold * 1.5 + quality.iridium * 2.0;
+
         // Get the settings
         let settings: Settings = {
             season: Season.fromString(season_input.value),
             start_day: current_day_input.valueAsNumber,
-            multiseason_enabled: enable_multiseason.checked
+            multiseason_enabled: enable_multiseason.checked,
+            quality_probabilities: enable_quality.checked ? quality : null,
         };
 
         // Repopulate table and change style
         table_component.repopulateTable(settings);
         document.documentElement.className = season_input.value.toLowerCase();
+
+        // Set the quality settings
+        // TODO: get these elements ahead of time, stop querying every time
+        let key: keyof QualityProbabilities;
+        for (key in quality) {
+            let cell = document.getElementById(`percent-${key}`)!;
+            let percent = 100 * quality[key];
+            cell.textContent = `${percent.toFixed(0)}%`;
+        }
+        document.getElementById("average-quality")!.textContent = quality_factor.toFixed(2);
     }
 
     // Run it once to apply the default settings.

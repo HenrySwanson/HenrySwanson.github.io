@@ -6,7 +6,7 @@ stylesheet = "/stardew.css"
 
 <script src="/crops.js" async></script>
 
-Note: Only the "Season", "Day", and "Multi-season" inputs work at the moment.
+Note: "Tiller" doesn't work yet.
 
 <div id="input-panel" class="rounded-box">
 <table>
@@ -32,18 +32,30 @@ Note: Only the "Season", "Day", and "Multi-season" inputs work at the moment.
     <td><input type="checkbox" id="enable-multiseason" name="enable-multiseason"/></td>
   </tr>
   <tr>
-    <td><label for="quality">Enable Quality?:</label></td>
-    <td><input type="checkbox" id="quality" name="quality"/></td>
+    <td><label for="enable-quality">Enable Quality?:</label></td>
+    <td><input type="checkbox" id="enable-quality" name="enable-quality"/></td>
   </tr>
 </table>
 <table>
   <tr>
-    <td><label for="farmer_level">Farmer Level:</label></td>
-    <td><input type="number" id="farmer_level" name="farmer_level" min="1" max="10" value="1"/></td>
+    <td><label for="farmer-level">Farmer Level:</label></td>
+    <td><input type="number" id="farmer-level" name="farmer-level" min="1" max="10" value="1"/></td>
   </tr>
   <tr>
     <td><label for="tiller">Tiller Profession?:</label></td>
     <td><input type="checkbox" id="tiller" name="tiller"/></td>
+  </tr>
+</table>
+<table>
+  <tr>
+    <td colspan=3>Average Quality Factor:</td>
+    <td id="average-quality">1.00</td>
+  </tr>
+  <tr>
+    <td id="percent-normal"></td>
+    <td id="percent-silver"></td>
+    <td id="percent-gold"></td>
+    <td id="percent-iridium"></td>
   </tr>
 </table>
 </div>
