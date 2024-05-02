@@ -51,12 +51,12 @@ const IRIDIUM_MULTIPLIER = 2.0;
 
 function computeQuality(farming_level: number): QualityProbabilities {
     // https://stardewvalleywiki.com/Farming#Complete_Formula_2
-    let fertilizer_level = 0;
+    const fertilizer_level = 0;
 
     // Quality for a crop is determined by a series of weighted coin flips.
     // The probabilities for the coins are computed here.
-    let p_gold_coin = 0.2 * (farming_level / 10.0) + 0.2 * fertilizer_level * ((farming_level + 2.0) / 12.0) + 0.01;
-    let p_silver_coin = Math.min(2 * p_gold_coin, 0.75);
+    const p_gold_coin = 0.2 * (farming_level / 10.0) + 0.2 * fertilizer_level * ((farming_level + 2.0) / 12.0) + 0.01;
+    const p_silver_coin = Math.min(2 * p_gold_coin, 0.75);
     let p_iridium_coin = p_gold_coin / 2;
 
     // TODO: this is only enabled at certain fertilizer levels
@@ -66,14 +66,14 @@ function computeQuality(farming_level: number): QualityProbabilities {
     // work to do to find out the final probabilities.
 
     // Chance of iridium is just the local chance of iridium.
-    let iridium = p_iridium_coin;
+    const iridium = p_iridium_coin;
     // To get gold, don't be iridium, and pass the gold coin flip.
-    let gold = (1 - iridium) * p_gold_coin;
+    const gold = (1 - iridium) * p_gold_coin;
     // Similarly, for silver, don't be iridum or gold, and pass the
     // silver coin flip.
-    let silver = (1 - iridium - gold) * p_silver_coin;
+    const silver = (1 - iridium - gold) * p_silver_coin;
     // Base quality is everything else.
-    let normal = 1 - iridium - gold - silver;
+    const normal = 1 - iridium - gold - silver;
 
     return { normal, silver, gold, iridium };
 }
@@ -87,8 +87,8 @@ type Settings = {
 
 function calculate(crop: CropDefinition, settings: Settings): CropData | "out-of-season" {
     // When is this crop in-season?
-    let seasons: Season[] = [];
-    let num_seasons = crop.multiseason ?? 1;
+    const seasons: Season[] = [];
+    const num_seasons = crop.multiseason ?? 1;
     for (let i = 0; i < num_seasons; i++) {
         seasons.push(Season.fromString(crop.season).valueOf() + i);
     }
@@ -99,10 +99,10 @@ function calculate(crop: CropDefinition, settings: Settings): CropData | "out-of
     }
 
     // How many days do we have left?
-    let seasons_left = settings.multiseason_enabled
+    const seasons_left = settings.multiseason_enabled
         ? seasons.length - seasons.indexOf(settings.season)
         : 1;
-    let days_left = 28 * seasons_left - settings.start_day;
+    const days_left = 28 * seasons_left - settings.start_day;
 
     // In the number of days remaining, how many harvests do we get?
     let num_harvests = 0;
@@ -111,17 +111,17 @@ function calculate(crop: CropDefinition, settings: Settings): CropData | "out-of
         num_harvests += 1;
         useful_days += crop.days_to_grow;
         if (crop.regrowth_period) {
-            let extra_harvests = Math.floor((days_left - crop.days_to_grow) / crop.regrowth_period);
+            const extra_harvests = Math.floor((days_left - crop.days_to_grow) / crop.regrowth_period);
             num_harvests += extra_harvests;
             useful_days += extra_harvests * crop.regrowth_period;
         }
     }
 
     // How much is a crop worth, on average?
-    let base_price = crop.sell_price;
+    const base_price = crop.sell_price;
     let quality_price;
     if (settings.quality_probabilities) {
-        let q = settings.quality_probabilities;
+        const q = settings.quality_probabilities;
         // zip together prices and probabilities
         quality_price = [
             [1.0, q.normal],
@@ -139,12 +139,12 @@ function calculate(crop: CropDefinition, settings: Settings): CropData | "out-of
     // We can sometimes get multiple crops per harvest, but all the extra crops
     // will be regular quality.
     // TODO: is this true? i see conflicting sources online
-    let num_crops_per_harvest = (crop.yield ?? 1) + (crop.percent_chance_extra ?? 0) / 100.0;
-    let revenue_per_harvest = quality_price + (num_crops_per_harvest - 1) * base_price;
+    const num_crops_per_harvest = (crop.yield ?? 1) + (crop.percent_chance_extra ?? 0) / 100.0;
+    const revenue_per_harvest = quality_price + (num_crops_per_harvest - 1) * base_price;
 
     // Okay, let's calculate everything!
-    let profit = revenue_per_harvest * num_harvests - crop.seed_cost;
-    let daily_profit = profit / useful_days;
+    const profit = revenue_per_harvest * num_harvests - crop.seed_cost;
+    const daily_profit = profit / useful_days;
 
     return {
         definition: crop,
@@ -201,7 +201,7 @@ const COLUMNS: Column[] = [
     {
         name: "Yield",
         cellText: (crop: CropData) => {
-            let yield_num = crop.definition.yield ?? 1;
+            const yield_num = crop.definition.yield ?? 1;
             if (crop.definition.percent_chance_extra) {
                 return `${yield_num} + ${crop.definition.percent_chance_extra}%`;
             } else {
@@ -210,8 +210,8 @@ const COLUMNS: Column[] = [
         },
         compare: (a: CropData, b: CropData) => {
             // slight hack -- represent as a + b/100
-            let a_num = (a.definition.yield ?? 1) + (a.definition.percent_chance_extra ?? 0) / 100;
-            let b_num = (b.definition.yield ?? 1) + (b.definition.percent_chance_extra ?? 0) / 100;
+            const a_num = (a.definition.yield ?? 1) + (a.definition.percent_chance_extra ?? 0) / 100;
+            const b_num = (b.definition.yield ?? 1) + (b.definition.percent_chance_extra ?? 0) / 100;
             return a_num - b_num;
         }
     },
@@ -228,7 +228,7 @@ const COLUMNS: Column[] = [
     {
         name: "Num Crops",
         cellText: (crop: CropData) => {
-            let num_crops = crop.num_crops;
+            const num_crops = crop.num_crops;
             if (Number.isInteger(num_crops)) {
                 return num_crops.toString();
             }
@@ -262,8 +262,8 @@ class CropRow {
         this.row = row;
 
         // now populate the row
-        for (let col of COLUMNS) {
-            let value = col.cellText(this.data);
+        for (const col of COLUMNS) {
+            const value = col.cellText(this.data);
             this.row.insertCell().appendChild(document.createTextNode(value));
         }
     }
@@ -296,11 +296,11 @@ class CropTable {
         this.tbody = this.table.createTBody();
 
         // Populate head once, here
-        let row = this.thead.insertRow();
-        for (let [idx, col] of COLUMNS.entries()) {
-            let cell = row.insertCell();
+        const row = this.thead.insertRow();
+        for (const [idx, col] of COLUMNS.entries()) {
+            const cell = row.insertCell();
             cell.appendChild(document.createTextNode(col.name));
-            cell.addEventListener("click", (event) => {
+            cell.addEventListener("click", () => {
                 // Which way do we sort?
                 let dir: SortDirection;
                 if (this.current_sort !== null && this.current_sort[0] === idx) {
@@ -311,8 +311,8 @@ class CropTable {
                 this.current_sort = [idx, dir];
 
                 // Clear all the header buttons, except ourselves
-                let headers = this.thead.querySelectorAll('td');
-                for (let header of headers) {
+                const headers = this.thead.querySelectorAll('td');
+                for (const header of headers) {
                     header.removeAttribute("aria-sort");
                 }
                 headers[idx].setAttribute("aria-sort", dir);
@@ -332,13 +332,13 @@ class CropTable {
         // Discard the old rows and create new ones
         this.tbody.replaceChildren();
         this.rows = [];
-        for (let def of CROP_DEFINITIONS) {
+        for (const def of CROP_DEFINITIONS) {
             // Filter to crops that are in-season
-            let data = calculate(def, settings);
+            const data = calculate(def, settings);
             if (data == "out-of-season") {
                 continue;
             }
-            let row = this.tbody.insertRow();
+            const row = this.tbody.insertRow();
             this.rows.push(new CropRow(row, data));
         }
 
@@ -359,14 +359,14 @@ class CropTable {
 
         // We first sort our own collection, then use that to re-insert
         // our row elements.
-        let col = COLUMNS[idx];
+        const col = COLUMNS[idx];
         this.rows.sort((a, b) => {
-            let compare = col.compare(a.data, b.data);
+            const compare = col.compare(a.data, b.data);
             return dir === "ascending" ? compare : -compare;
         });
 
         // Then use that to rearrange the nodes in the body
-        for (let row of this.rows) {
+        for (const row of this.rows) {
             this.tbody.appendChild(row.row);
         }
     }
@@ -376,29 +376,29 @@ function initialize() {
     console.log("Initializing!");
 
     // Find all the elements I need
-    let table = document.getElementById("crop-table");
+    const table = document.getElementById("crop-table");
     if (!(table instanceof HTMLTableElement)) {
         throw new Error("crop-table should be a <table>");
     }
 
-    let input_panel = document.getElementById("input-panel")!;
-    let season_input = document.querySelector<HTMLInputElement>("#season")!;
-    let current_day_input = document.querySelector<HTMLInputElement>("#day")!;
-    let enable_multiseason = document.querySelector<HTMLInputElement>("#enable-multiseason")!;
-    let enable_quality = document.querySelector<HTMLInputElement>("#enable-quality")!;
-    let farming_level_input = document.querySelector<HTMLInputElement>("#farmer-level")!;
+    const input_panel = document.getElementById("input-panel")!;
+    const season_input = document.querySelector<HTMLInputElement>("#season")!;
+    const current_day_input = document.querySelector<HTMLInputElement>("#day")!;
+    const enable_multiseason = document.querySelector<HTMLInputElement>("#enable-multiseason")!;
+    const enable_quality = document.querySelector<HTMLInputElement>("#enable-quality")!;
+    const farming_level_input = document.querySelector<HTMLInputElement>("#farmer-level")!;
 
     // Create table component
-    let table_component = new CropTable(table);
+    const table_component = new CropTable(table);
 
     // Applies the input settings to the document
     function readAndApplySettings() {
         // Compute quality probablities
-        let quality = computeQuality(farming_level_input.valueAsNumber);
-        let quality_factor = quality.normal + quality.silver * 1.25 + quality.gold * 1.5 + quality.iridium * 2.0;
+        const quality = computeQuality(farming_level_input.valueAsNumber);
+        const quality_factor = quality.normal + quality.silver * 1.25 + quality.gold * 1.5 + quality.iridium * 2.0;
 
         // Get the settings
-        let settings: Settings = {
+        const settings: Settings = {
             season: Season.fromString(season_input.value),
             start_day: current_day_input.valueAsNumber,
             multiseason_enabled: enable_multiseason.checked,
@@ -413,8 +413,8 @@ function initialize() {
         // TODO: get these elements ahead of time, stop querying every time
         let key: keyof QualityProbabilities;
         for (key in quality) {
-            let cell = document.getElementById(`percent-${key}`)!;
-            let percent = 100 * quality[key];
+            const cell = document.getElementById(`percent-${key}`)!;
+            const percent = 100 * quality[key];
             cell.textContent = `${percent.toFixed(0)}%`;
         }
         document.getElementById("average-quality")!.textContent = quality_factor.toFixed(2);
