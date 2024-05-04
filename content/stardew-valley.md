@@ -6,8 +6,6 @@ stylesheet = "/stardew.css"
 
 <script src="/crops.js" async></script>
 
-Note: "Tiller" doesn't work yet.
-
 <div id="input-panel" class="rounded-box">
 <table>
   <tr>
@@ -42,8 +40,8 @@ Note: "Tiller" doesn't work yet.
     <td><input type="number" id="farmer-level" name="farmer-level" min="1" max="10" value="1"/></td>
   </tr>
   <tr>
-    <td><label for="tiller">Tiller Profession?:</label></td>
-    <td><input type="checkbox" id="tiller" name="tiller"/></td>
+    <td><label for="enable-tiller">Tiller Profession?:</label></td>
+    <td><input type="checkbox" id="enable-tiller" name="enable-tiller"/></td>
   </tr>
 </table>
 <table>

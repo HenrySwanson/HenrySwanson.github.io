@@ -83,6 +83,7 @@ type Settings = {
     start_day: number,
     multiseason_enabled: boolean,
     quality_probabilities: QualityProbabilities | null,
+    tiller_enabled: boolean,
 };
 
 function calculate(crop: CropDefinition, settings: Settings): CropData | "out-of-season" {
@@ -140,7 +141,11 @@ function calculate(crop: CropDefinition, settings: Settings): CropData | "out-of
     // will be regular quality.
     // TODO: is this true? i see conflicting sources online
     const num_crops_per_harvest = (crop.yield ?? 1) + (crop.percent_chance_extra ?? 0) / 100.0;
-    const revenue_per_harvest = quality_price + (num_crops_per_harvest - 1) * base_price;
+    let revenue_per_harvest = quality_price + (num_crops_per_harvest - 1) * base_price;
+
+    if (settings.tiller_enabled) {
+        revenue_per_harvest *= 1.1; // could maybe do this before to get integer prices
+    }
 
     // Okay, let's calculate everything!
     const profit = revenue_per_harvest * num_harvests - crop.seed_cost;
@@ -387,6 +392,7 @@ function initialize() {
     const enable_multiseason = document.querySelector<HTMLInputElement>("#enable-multiseason")!;
     const enable_quality = document.querySelector<HTMLInputElement>("#enable-quality")!;
     const farming_level_input = document.querySelector<HTMLInputElement>("#farmer-level")!;
+    const enable_tiller = document.querySelector<HTMLInputElement>("#enable-tiller")!;
 
     // Create table component
     const table_component = new CropTable(table);
@@ -403,6 +409,7 @@ function initialize() {
             start_day: current_day_input.valueAsNumber,
             multiseason_enabled: enable_multiseason.checked,
             quality_probabilities: enable_quality.checked ? quality : null,
+            tiller_enabled: enable_tiller.checked,
         };
 
         // Repopulate table and change style
