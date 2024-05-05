@@ -44,6 +44,7 @@ type QualityProbabilities = {
     gold: number,
     iridium: number,
 };
+type QualityTypes = keyof QualityProbabilities;
 
 const SILVER_MULTIPLIER = 1.25;
 const GOLD_MULTIPLIER = 1.5;
@@ -377,6 +378,25 @@ class CropTable {
     }
 }
 
+type Inputs = {
+    season: Season,
+    start_day: number,
+    multiseason_checked: boolean,
+    quality_checked: boolean,
+    farming_level: number,
+    tiller_checked: boolean,
+};
+
+function visuallyEnableRow(row: HTMLElement, enable: boolean) {
+    for (let cell of row.querySelectorAll("td")) {
+        if (enable) {
+            cell.classList.remove("disabled");
+        } else {
+            cell.classList.add("disabled");
+        }
+    }
+}
+
 function initialize() {
     console.log("Initializing!");
 
@@ -394,37 +414,67 @@ function initialize() {
     const farming_level_input = document.querySelector<HTMLInputElement>("#farmer-level")!;
     const enable_tiller = document.querySelector<HTMLInputElement>("#enable-tiller")!;
 
+    let quality_cells = {
+        normal: document.getElementById(`percent-normal`)!,
+        silver: document.getElementById(`percent-silver`)!,
+        gold: document.getElementById(`percent-gold`)!,
+        iridium: document.getElementById(`percent-iridium`)!,
+    };
+    let avg_quality_cell = document.getElementById("average-quality")!;
+
     // Create table component
     const table_component = new CropTable(table);
 
-    // Applies the input settings to the document
-    function readAndApplySettings() {
-        // Compute quality probablities
-        const quality = computeQuality(farming_level_input.valueAsNumber);
-        const quality_factor = quality.normal + quality.silver * 1.25 + quality.gold * 1.5 + quality.iridium * 2.0;
-
-        // Get the settings
-        const settings: Settings = {
+    // Read inputs
+    function readInputs(): Inputs {
+        return {
             season: Season.fromString(season_input.value),
             start_day: current_day_input.valueAsNumber,
-            multiseason_enabled: enable_multiseason.checked,
+            multiseason_checked: enable_multiseason.checked,
+            quality_checked: enable_quality.checked,
+            farming_level: farming_level_input.valueAsNumber,
+            tiller_checked: enable_tiller.checked,
+        };
+    }
+
+    // Applies the input settings to the document
+    function readAndApplySettings() {
+        // Read all the inputs
+        const inputs = readInputs();
+
+        // Construct the settings
+        const quality = computeQuality(inputs.farming_level);
+        let settings: Settings = {
+            season: inputs.season,
+            start_day: inputs.start_day,
+            multiseason_enabled: inputs.multiseason_checked,
             quality_probabilities: enable_quality.checked ? quality : null,
             tiller_enabled: enable_tiller.checked,
         };
 
+        // Touch the display elements
+        let q: QualityTypes;
+        for (q in quality_cells) {
+            const percent = 100 * quality[q];
+            quality_cells[q].textContent = `${percent.toFixed(0)}%`;
+        }
+        const quality_factor = quality.normal + quality.silver * 1.25 + quality.gold * 1.5 + quality.iridium * 2.0;
+        avg_quality_cell.textContent = quality_factor.toFixed(2);
+
+        // Disable certain elements
+        visuallyEnableRow(enable_tiller.parentElement!.parentElement!, inputs.farming_level >= 5);
+        if (inputs.farming_level < 5) {
+            settings.tiller_enabled = false;
+        }
+
+        for (q in quality_cells) {
+            visuallyEnableRow(quality_cells[q].parentElement!, inputs.quality_checked);
+        }
+        visuallyEnableRow(avg_quality_cell.parentElement!, inputs.quality_checked);
+
         // Repopulate table and change style
         table_component.repopulateTable(settings);
         document.documentElement.className = season_input.value.toLowerCase();
-
-        // Set the quality settings
-        // TODO: get these elements ahead of time, stop querying every time
-        let key: keyof QualityProbabilities;
-        for (key in quality) {
-            const cell = document.getElementById(`percent-${key}`)!;
-            const percent = 100 * quality[key];
-            cell.textContent = `${percent.toFixed(0)}%`;
-        }
-        document.getElementById("average-quality")!.textContent = quality_factor.toFixed(2);
     }
 
     // Run it once to apply the default settings.
