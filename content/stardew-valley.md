@@ -61,3 +61,5 @@ stylesheet = "/stardew.css"
 <div class="rounded-box">
 <table id="crop-table" class="sortable"></table>
 </div>
+
+<nav id="navigation"></nav>

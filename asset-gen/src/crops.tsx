@@ -496,3 +496,6 @@ if (document.readyState === "loading") {
     // `DOMContentLoaded` has already fired
     initialize();
 }
+
+import { foo } from './test';
+// foo();
