@@ -164,6 +164,9 @@ function calculate(crop: CropDefinition, settings: Settings): CropData | "out-of
 
 /* ======== GUI ======== */
 
+import { useState } from "react";
+import { createRoot } from "react-dom/client";
+
 // Defines the set of columns for the whole table.
 type Column = {
     name: string;
@@ -259,20 +262,18 @@ const COLUMNS: Column[] = [
     }
 ];
 
-class CropRow {
-    data: CropData;
-    row: HTMLTableRowElement;
+function CropRow({ value }: { value: CropData; }) {
+    const [cropData, setCropData] = useState<CropData>(value);
 
-    constructor(row: HTMLTableRowElement, data: CropData) {
-        this.data = data;
-        this.row = row;
-
-        // now populate the row
-        for (const col of COLUMNS) {
-            const value = col.cellText(this.data);
-            this.row.insertCell().appendChild(document.createTextNode(value));
-        }
+    let cells = [];
+    for (const col of COLUMNS) {
+        const value = col.cellText(cropData);
+        cells.push(
+            <td>{value}</td>
+        );
     }
+
+    return <>{cells}</>;
 }
 
 type SortDirection = "ascending" | "descending";
@@ -289,7 +290,7 @@ class CropTable {
     table: HTMLTableElement;
     thead: HTMLTableSectionElement;
     tbody: HTMLTableSectionElement;
-    rows: CropRow[];
+    rows: [HTMLTableRowElement, CropData][];
     current_sort: [number, SortDirection] | null;
 
     constructor(table: HTMLTableElement) {
@@ -345,7 +346,7 @@ class CropTable {
                 continue;
             }
             const row = this.tbody.insertRow();
-            this.rows.push(new CropRow(row, data));
+            this.rows.push([row, data]);
         }
 
         // We also need to re-sort them. 
@@ -367,13 +368,16 @@ class CropTable {
         // our row elements.
         const col = COLUMNS[idx];
         this.rows.sort((a, b) => {
-            const compare = col.compare(a.data, b.data);
+            const compare = col.compare(a[1], b[1]);
             return dir === "ascending" ? compare : -compare;
         });
 
         // Then use that to rearrange the nodes in the body
-        for (const row of this.rows) {
-            this.tbody.appendChild(row.row);
+        for (const [row, data] of this.rows) {
+            row.id = `${data.definition.name}-row`;
+            const root = createRoot(row);
+            root.render(<CropRow value={data}></CropRow>);
+            this.tbody.appendChild(row);
         }
     }
 }
@@ -497,5 +501,3 @@ if (document.readyState === "loading") {
     initialize();
 }
 
-import { foo } from './test';
-// foo();

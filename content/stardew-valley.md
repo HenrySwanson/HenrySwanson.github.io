@@ -62,4 +62,4 @@ stylesheet = "/stardew.css"
 <table id="crop-table" class="sortable"></table>
 </div>
 
-<nav id="navigation"></nav>
+<nav id="test-area"></nav>
