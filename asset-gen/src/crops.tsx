@@ -262,18 +262,17 @@ const COLUMNS: Column[] = [
     }
 ];
 
-function CropRow({ value }: { value: CropData; }) {
-    const [cropData, setCropData] = useState<CropData>(value);
+function CropRow({ crop_data }: { crop_data: CropData; }) {
 
     let cells = [];
     for (const col of COLUMNS) {
-        const value = col.cellText(cropData);
+        const value = col.cellText(crop_data);
         cells.push(
-            <td>{value}</td>
+            <td key={col.name}>{value}</td>
         );
     }
 
-    return <>{cells}</>;
+    return <tr>{cells}</tr>;
 }
 
 type SortDirection = "ascending" | "descending";
@@ -286,100 +285,64 @@ function flipDirection(x: SortDirection): SortDirection {
     }
 }
 
-class CropTable {
-    table: HTMLTableElement;
-    thead: HTMLTableSectionElement;
-    tbody: HTMLTableSectionElement;
-    rows: [HTMLTableRowElement, CropData][];
-    current_sort: [number, SortDirection] | null;
 
-    constructor(table: HTMLTableElement) {
-        this.table = table;
-        this.rows = [];
-        this.current_sort = null;
+function CropTable({ crop_data }: { crop_data: CropData[]; }) {
+    const [currentSort, setCurrentSort] = useState<[number, SortDirection] | null>(null);
 
-        // Create table header and body
-        this.thead = this.table.createTHead();
-        this.tbody = this.table.createTBody();
-
-        // Populate head once, here
-        const row = this.thead.insertRow();
-        for (const [idx, col] of COLUMNS.entries()) {
-            const cell = row.insertCell();
-            cell.appendChild(document.createTextNode(col.name));
-            cell.addEventListener("click", () => {
-                // Which way do we sort?
-                let dir: SortDirection;
-                if (this.current_sort !== null && this.current_sort[0] === idx) {
-                    dir = flipDirection(this.current_sort[1]);
-                } else {
-                    dir = "ascending";
-                }
-                this.current_sort = [idx, dir];
-
-                // Clear all the header buttons, except ourselves
-                const headers = this.thead.querySelectorAll('td');
-                for (const header of headers) {
-                    header.removeAttribute("aria-sort");
-                }
-                headers[idx].setAttribute("aria-sort", dir);
-
-                // Now sort the rows
-                this.sortRows();
-            });
+    function handleClick(idx: number) {
+        // Which way do we sort?
+        let dir: SortDirection;
+        if (currentSort !== null && currentSort[0] === idx) {
+            dir = flipDirection(currentSort[1]);
+        } else {
+            dir = "ascending";
         }
-
-        // We'll leave the body empty because it'll be recomputed from
-        // repopulateTable(), and we need the settings to be able to
-        // create the rows anyways.
+        setCurrentSort([idx, dir]);
     }
 
-    // TODO: don't recreate rows; change the text instead
-    public repopulateTable(settings: Settings) {
-        // Discard the old rows and create new ones
-        this.tbody.replaceChildren();
-        this.rows = [];
-        for (const def of CROP_DEFINITIONS) {
-            // Filter to crops that are in-season
-            const data = calculate(def, settings);
-            if (data == "out-of-season") {
-                continue;
-            }
-            const row = this.tbody.insertRow();
-            this.rows.push([row, data]);
-        }
-
-        // We also need to re-sort them. 
-        this.sortRows();
-    }
-
-    private sortRows() {
+    function sortCropData(): CropData[] {
         // If no sort selected, default is to sort by name
         let idx: number;
         let dir: SortDirection;
-        if (this.current_sort === null) {
+        if (currentSort === null) {
             idx = 0;
             dir = "ascending";
         } else {
-            [idx, dir] = this.current_sort;
+            [idx, dir] = currentSort;
         }
 
         // We first sort our own collection, then use that to re-insert
         // our row elements.
         const col = COLUMNS[idx];
-        this.rows.sort((a, b) => {
-            const compare = col.compare(a[1], b[1]);
+        crop_data.sort((a, b) => {
+            const compare = col.compare(a, b);
             return dir === "ascending" ? compare : -compare;
         });
-
-        // Then use that to rearrange the nodes in the body
-        for (const [row, data] of this.rows) {
-            row.id = `${data.definition.name}-row`;
-            const root = createRoot(row);
-            root.render(<CropRow value={data}></CropRow>);
-            this.tbody.appendChild(row);
-        }
+        return crop_data;
     }
+
+    // Create table header
+    let header_cells = [];
+    for (const [idx, col] of COLUMNS.entries()) {
+        let aria_sort = currentSort?.[0] == idx ? currentSort[1] : undefined;
+        header_cells.push(
+            <td
+                key={col.name}
+                onClick={() => handleClick(idx)}
+                aria-sort={aria_sort}> {col.name}
+            </td >);
+    }
+
+    // Create the rows
+    let rows = [];
+    for (const data of sortCropData()) {
+        rows.push(<CropRow key={data.definition.name} crop_data={data}></CropRow>);
+    }
+
+    return <>
+        <thead><tr>{header_cells}</tr></thead>
+        <tbody>{rows}</tbody>
+    </>;
 }
 
 type Inputs = {
@@ -427,7 +390,8 @@ function initialize() {
     let avg_quality_cell = document.getElementById("average-quality")!;
 
     // Create table component
-    const table_component = new CropTable(table);
+    const root = createRoot(table);
+    root.render(<CropTable crop_data={[]}></CropTable>);
 
     // Read inputs
     function readInputs(): Inputs {
@@ -476,8 +440,20 @@ function initialize() {
         }
         visuallyEnableRow(avg_quality_cell.parentElement!, inputs.quality_checked);
 
+        // Get the rows to draw
+        // Discard the old rows and create new ones
+        let crop_data = [];
+        for (const def of CROP_DEFINITIONS) {
+            // Filter to crops that are in-season
+            const data = calculate(def, settings);
+            if (data == "out-of-season") {
+                continue;
+            }
+            crop_data.push(data);
+        }
+
         // Repopulate table and change style
-        table_component.repopulateTable(settings);
+        root.render(<CropTable crop_data={crop_data}></CropTable>);
         document.documentElement.className = season_input.value.toLowerCase();
     }
 
