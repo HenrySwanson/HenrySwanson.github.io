@@ -4,6 +4,10 @@
 // hard-code it inline (might be more readable)
 import CROP_DEFINITIONS from "./crops.json";
 
+function clamp(x: number, min: number, max: number) {
+    return Math.max(min, Math.min(max, x));
+}
+
 /* ======== CALCULATION ======== */
 
 type CropDefinition = typeof CROP_DEFINITIONS[number];
@@ -354,14 +358,149 @@ type Inputs = {
     tiller_checked: boolean,
 };
 
-function visuallyEnableRow(row: HTMLElement, enable: boolean) {
-    for (let cell of row.querySelectorAll("td")) {
-        if (enable) {
-            cell.classList.remove("disabled");
-        } else {
-            cell.classList.add("disabled");
-        }
+// Global escape hatch
+let _global_inputs: Inputs = {
+    season: Season.SPRING,
+    start_day: 1,
+    multiseason_checked: false,
+    quality_checked: false,
+    farming_level: 1,
+    tiller_checked: false
+};
+let _global_rerender: (() => void);
+
+function InputPanel() {
+    const [inputs, setInputs] = useState<Inputs>(_global_inputs);
+
+    function updateInputs(i: Inputs) {
+        i.start_day = clamp(i.start_day, 1, 28);
+        i.farming_level = clamp(i.farming_level, 1, 10);
+        setInputs(i);
+
+        // Hack to set global and trigger re-rendering of other components
+        _global_inputs = i;
+        _global_rerender();
     }
+
+    const season_select = <select
+        id="season"
+        name="season"
+        value={Season[inputs.season].toLowerCase()}
+        onChange={e => {
+            updateInputs({ ...inputs, season: Season.fromString(e.target.value) });
+        }}>
+        <option value="spring">Spring</option>
+        <option value="summer">Summer</option>
+        <option value="fall">Fall</option>
+        <option value="winter">Winter</option>
+    </select>;
+
+    const day_input = <input
+        type="number"
+        id="day"
+        name="day"
+        value={inputs.start_day}
+        onChange={e => {
+            updateInputs({ ...inputs, start_day: e.target.valueAsNumber });
+        }} />;
+
+    const multiseason_checkbox = <input
+        type="checkbox"
+        id="enable-multiseason"
+        name="enable-multiseason"
+        checked={inputs.multiseason_checked}
+        onChange={e => {
+            updateInputs({ ...inputs, multiseason_checked: e.target.checked });
+        }}
+    />;
+
+    const quality_checkbox = <input
+        type="checkbox"
+        id="enable-quality"
+        name="enable-quality"
+        checked={inputs.quality_checked}
+        onChange={e => {
+            updateInputs({ ...inputs, quality_checked: e.target.checked });
+        }}
+    />;
+
+    const farmer_level_input = <input
+        type="number"
+        id="farmer-level"
+        name="farmer-level"
+        min="1" max="10"
+        value={inputs.farming_level}
+        onChange={e => {
+            updateInputs({ ...inputs, farming_level: e.target.valueAsNumber });
+        }} />;
+
+    const tiller_checkbox = <input
+        type="checkbox"
+        id="enable-tiller"
+        name="enable-tiller"
+        checked={inputs.tiller_checked}
+        onChange={e => {
+            updateInputs({ ...inputs, tiller_checked: e.target.checked });
+        }} />;
+
+    // Compute some values for things
+    const quality = computeQuality(inputs.farming_level);
+    const average_quality_score = quality.normal + quality.silver * 1.25 + quality.gold * 1.5 + quality.iridium * 2.0;
+    const tiller_checkbox_enabled = inputs.farming_level >= 5;
+
+    // TODO: should this be a <form>?
+    return <>
+        <table>
+            <tbody>
+                <tr>
+                    <td><label htmlFor="season">Season:</label></td>
+                    <td>{season_select}</td>
+                </tr>
+                <tr>
+                    <td><label htmlFor="day">Day (1-28):</label></td>
+                    <td>{day_input}</td>
+                </tr>
+            </tbody>
+        </table>
+        <table>
+            <tbody>
+                <tr>
+                    <td><label htmlFor="enable-multiseason">Multi-season?:</label></td>
+                    <td>{multiseason_checkbox}</td>
+                </tr>
+                <tr>
+                    <td><label htmlFor="enable-quality">Enable Quality?:</label></td>
+                    <td>{quality_checkbox}</td>
+                </tr>
+            </tbody>
+        </table>
+        <table>
+            <tbody>
+                <tr>
+                    <td><label htmlFor="farmer-level">Farmer Level:</label></td>
+                    <td>{farmer_level_input}</td>
+                </tr>
+                <tr>
+                    <td className={tiller_checkbox_enabled ? undefined : "disabled"}><label htmlFor="enable-tiller">Tiller Profession?:</label></td>
+                    <td className={tiller_checkbox_enabled ? undefined : "disabled"}>{tiller_checkbox}</td>
+                </tr>
+            </tbody>
+        </table>
+        <table>
+            <tbody>
+                <tr>
+                    <td className={inputs.quality_checked ? undefined : "disabled"} colSpan={3}>Average Quality Factor:</td>
+                    <td className={inputs.quality_checked ? undefined : "disabled"}>{average_quality_score.toFixed(2)}</td>
+                </tr>
+                <tr>
+                    <td className={inputs.quality_checked ? undefined : "disabled"}>{(100 * quality.normal).toFixed(0)}%</td>
+                    <td className={inputs.quality_checked ? undefined : "disabled"}>{(100 * quality.silver).toFixed(0)}%</td>
+                    <td className={inputs.quality_checked ? undefined : "disabled"}>{(100 * quality.gold).toFixed(0)}%</td>
+                    <td className={inputs.quality_checked ? undefined : "disabled"}>{(100 * quality.iridium).toFixed(0)}%</td>
+                </tr>
+            </tbody>
+        </table >
+    </>;
 }
 
 function initialize() {
@@ -373,42 +512,17 @@ function initialize() {
         throw new Error("crop-table should be a <table>");
     }
 
-    const input_panel = document.getElementById("input-panel")!;
-    const season_input = document.querySelector<HTMLInputElement>("#season")!;
-    const current_day_input = document.querySelector<HTMLInputElement>("#day")!;
-    const enable_multiseason = document.querySelector<HTMLInputElement>("#enable-multiseason")!;
-    const enable_quality = document.querySelector<HTMLInputElement>("#enable-quality")!;
-    const farming_level_input = document.querySelector<HTMLInputElement>("#farmer-level")!;
-    const enable_tiller = document.querySelector<HTMLInputElement>("#enable-tiller")!;
-
-    let quality_cells = {
-        normal: document.getElementById(`percent-normal`)!,
-        silver: document.getElementById(`percent-silver`)!,
-        gold: document.getElementById(`percent-gold`)!,
-        iridium: document.getElementById(`percent-iridium`)!,
-    };
-    let avg_quality_cell = document.getElementById("average-quality")!;
-
     // Create table component
     const root = createRoot(table);
     root.render(<CropTable crop_data={[]}></CropTable>);
 
-    // Read inputs
-    function readInputs(): Inputs {
-        return {
-            season: Season.fromString(season_input.value),
-            start_day: current_day_input.valueAsNumber,
-            multiseason_checked: enable_multiseason.checked,
-            quality_checked: enable_quality.checked,
-            farming_level: farming_level_input.valueAsNumber,
-            tiller_checked: enable_tiller.checked,
-        };
-    }
+    const foo = createRoot(document.getElementById("input-panel")!);
+    foo.render(<InputPanel></InputPanel>);
 
     // Applies the input settings to the document
     function readAndApplySettings() {
         // Read all the inputs
-        const inputs = readInputs();
+        const inputs = _global_inputs;
 
         // Construct the settings
         const quality = computeQuality(inputs.farming_level);
@@ -416,29 +530,9 @@ function initialize() {
             season: inputs.season,
             start_day: inputs.start_day,
             multiseason_enabled: inputs.multiseason_checked,
-            quality_probabilities: enable_quality.checked ? quality : null,
-            tiller_enabled: enable_tiller.checked,
+            quality_probabilities: inputs.quality_checked ? quality : null,
+            tiller_enabled: inputs.tiller_checked && inputs.farming_level >= 5,
         };
-
-        // Touch the display elements
-        let q: QualityTypes;
-        for (q in quality_cells) {
-            const percent = 100 * quality[q];
-            quality_cells[q].textContent = `${percent.toFixed(0)}%`;
-        }
-        const quality_factor = quality.normal + quality.silver * 1.25 + quality.gold * 1.5 + quality.iridium * 2.0;
-        avg_quality_cell.textContent = quality_factor.toFixed(2);
-
-        // Disable certain elements
-        visuallyEnableRow(enable_tiller.parentElement!.parentElement!, inputs.farming_level >= 5);
-        if (inputs.farming_level < 5) {
-            settings.tiller_enabled = false;
-        }
-
-        for (q in quality_cells) {
-            visuallyEnableRow(quality_cells[q].parentElement!, inputs.quality_checked);
-        }
-        visuallyEnableRow(avg_quality_cell.parentElement!, inputs.quality_checked);
 
         // Get the rows to draw
         // Discard the old rows and create new ones
@@ -454,16 +548,15 @@ function initialize() {
 
         // Repopulate table and change style
         root.render(<CropTable crop_data={crop_data}></CropTable>);
-        document.documentElement.className = season_input.value.toLowerCase();
+        document.documentElement.className = Season[inputs.season].toLowerCase();
+
+        console.log(_global_inputs.season);
     }
 
     // Run it once to apply the default settings.
     readAndApplySettings();
 
-    // Attach event listeners
-    input_panel.addEventListener("change", (event) => {
-        readAndApplySettings();
-    });
+    _global_rerender = readAndApplySettings;
 }
 
 
