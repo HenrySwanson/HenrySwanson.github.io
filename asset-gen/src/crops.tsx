@@ -343,10 +343,12 @@ function CropTable({ crop_data }: { crop_data: CropData[]; }) {
         rows.push(<CropRow key={data.definition.name} crop_data={data}></CropRow>);
     }
 
-    return <>
-        <thead><tr>{header_cells}</tr></thead>
-        <tbody>{rows}</tbody>
-    </>;
+    return <div className="rounded-box">
+        <table className="sortable">
+            <thead><tr>{header_cells}</tr></thead>
+            <tbody>{rows}</tbody>
+        </table>
+    </div>;
 }
 
 type Inputs = {
@@ -358,36 +360,14 @@ type Inputs = {
     tiller_checked: boolean,
 };
 
-// Global escape hatch
-let _global_inputs: Inputs = {
-    season: Season.SPRING,
-    start_day: 1,
-    multiseason_checked: false,
-    quality_checked: false,
-    farming_level: 1,
-    tiller_checked: false
-};
-let _global_rerender: (() => void);
-
-function InputPanel() {
-    const [inputs, setInputs] = useState<Inputs>(_global_inputs);
-
-    function updateInputs(i: Inputs) {
-        i.start_day = clamp(i.start_day, 1, 28);
-        i.farming_level = clamp(i.farming_level, 1, 10);
-        setInputs(i);
-
-        // Hack to set global and trigger re-rendering of other components
-        _global_inputs = i;
-        _global_rerender();
-    }
+function InputPanel({ inputs, changeInputs }: { inputs: Inputs, changeInputs: (inputs: Inputs) => void; }) {
 
     const season_select = <select
         id="season"
         name="season"
         value={Season[inputs.season].toLowerCase()}
         onChange={e => {
-            updateInputs({ ...inputs, season: Season.fromString(e.target.value) });
+            changeInputs({ ...inputs, season: Season.fromString(e.target.value) });
         }}>
         <option value="spring">Spring</option>
         <option value="summer">Summer</option>
@@ -401,7 +381,7 @@ function InputPanel() {
         name="day"
         value={inputs.start_day}
         onChange={e => {
-            updateInputs({ ...inputs, start_day: e.target.valueAsNumber });
+            changeInputs({ ...inputs, start_day: e.target.valueAsNumber });
         }} />;
 
     const multiseason_checkbox = <input
@@ -410,7 +390,7 @@ function InputPanel() {
         name="enable-multiseason"
         checked={inputs.multiseason_checked}
         onChange={e => {
-            updateInputs({ ...inputs, multiseason_checked: e.target.checked });
+            changeInputs({ ...inputs, multiseason_checked: e.target.checked });
         }}
     />;
 
@@ -420,7 +400,7 @@ function InputPanel() {
         name="enable-quality"
         checked={inputs.quality_checked}
         onChange={e => {
-            updateInputs({ ...inputs, quality_checked: e.target.checked });
+            changeInputs({ ...inputs, quality_checked: e.target.checked });
         }}
     />;
 
@@ -431,7 +411,7 @@ function InputPanel() {
         min="1" max="10"
         value={inputs.farming_level}
         onChange={e => {
-            updateInputs({ ...inputs, farming_level: e.target.valueAsNumber });
+            changeInputs({ ...inputs, farming_level: e.target.valueAsNumber });
         }} />;
 
     const tiller_checkbox = <input
@@ -440,7 +420,7 @@ function InputPanel() {
         name="enable-tiller"
         checked={inputs.tiller_checked}
         onChange={e => {
-            updateInputs({ ...inputs, tiller_checked: e.target.checked });
+            changeInputs({ ...inputs, tiller_checked: e.target.checked });
         }} />;
 
     // Compute some values for things
@@ -449,7 +429,7 @@ function InputPanel() {
     const tiller_checkbox_enabled = inputs.farming_level >= 5;
 
     // TODO: should this be a <form>?
-    return <>
+    return <div className="rounded-box">
         <table>
             <tbody>
                 <tr>
@@ -500,65 +480,66 @@ function InputPanel() {
                 </tr>
             </tbody>
         </table >
+    </div>;
+}
+
+const DEFAULT_INPUTS: Inputs = {
+    season: Season.SPRING,
+    start_day: 1,
+    multiseason_checked: false,
+    quality_checked: false,
+    farming_level: 1,
+    tiller_checked: false
+};
+
+function Root() {
+    const [inputs, setInputs] = useState<Inputs>(DEFAULT_INPUTS);
+
+    function updateInputs(i: Inputs) {
+        // Do some quick cleanup
+        i.start_day = clamp(i.start_day, 1, 28);
+        i.farming_level = clamp(i.farming_level, 1, 10);
+        setInputs(i);
+    }
+
+    // Construct the settings
+    const quality = computeQuality(inputs.farming_level);
+    let settings: Settings = {
+        season: inputs.season,
+        start_day: inputs.start_day,
+        multiseason_enabled: inputs.multiseason_checked,
+        quality_probabilities: inputs.quality_checked ? quality : null,
+        tiller_enabled: inputs.tiller_checked && inputs.farming_level >= 5,
+    };
+
+    // Get the rows to draw
+    // Discard the old rows and create new ones
+    let crop_data = [];
+    for (const def of CROP_DEFINITIONS) {
+        // Filter to crops that are in-season
+        const data = calculate(def, settings);
+        if (data == "out-of-season") {
+            continue;
+        }
+        crop_data.push(data);
+    }
+
+    // Change style of whole document
+    document.documentElement.className = Season[inputs.season].toLowerCase();
+
+    return <>
+        <InputPanel inputs={inputs} changeInputs={updateInputs}></InputPanel>
+        <CropTable crop_data={crop_data}></CropTable>
     </>;
 }
 
 function initialize() {
     console.log("Initializing!");
 
-    // Find all the elements I need
-    const table = document.getElementById("crop-table");
-    if (!(table instanceof HTMLTableElement)) {
-        throw new Error("crop-table should be a <table>");
-    }
-
-    // Create table component
-    const root = createRoot(table);
-    root.render(<CropTable crop_data={[]}></CropTable>);
-
-    const foo = createRoot(document.getElementById("input-panel")!);
-    foo.render(<InputPanel></InputPanel>);
-
-    // Applies the input settings to the document
-    function readAndApplySettings() {
-        // Read all the inputs
-        const inputs = _global_inputs;
-
-        // Construct the settings
-        const quality = computeQuality(inputs.farming_level);
-        let settings: Settings = {
-            season: inputs.season,
-            start_day: inputs.start_day,
-            multiseason_enabled: inputs.multiseason_checked,
-            quality_probabilities: inputs.quality_checked ? quality : null,
-            tiller_enabled: inputs.tiller_checked && inputs.farming_level >= 5,
-        };
-
-        // Get the rows to draw
-        // Discard the old rows and create new ones
-        let crop_data = [];
-        for (const def of CROP_DEFINITIONS) {
-            // Filter to crops that are in-season
-            const data = calculate(def, settings);
-            if (data == "out-of-season") {
-                continue;
-            }
-            crop_data.push(data);
-        }
-
-        // Repopulate table and change style
-        root.render(<CropTable crop_data={crop_data}></CropTable>);
-        document.documentElement.className = Season[inputs.season].toLowerCase();
-
-        console.log(_global_inputs.season);
-    }
-
-    // Run it once to apply the default settings.
-    readAndApplySettings();
-
-    _global_rerender = readAndApplySettings;
+    // Create React root
+    const root = createRoot(document.getElementById("root")!);
+    root.render(<Root></Root>);
 }
-
 
 // Alrighty, we're ready to go! Wait for the DOM to finish loading (or see if it
 // already has.

@@ -6,16 +6,19 @@
     --light-color: #363;
     --dark-color: #252;
 }
+
 :root.summer {
     --background-color: #beb774;
     --light-color: #8f8105;
     --dark-color: #6d6203;
 }
+
 :root.fall {
     --background-color: #d69c6c;
     --light-color: #a86833;
     --dark-color: #613613;
 }
+
 :root.winter {
     --background-color: #8bb3d8;
     --light-color: #446c92;
@@ -46,6 +49,12 @@ h1 {
     display: flex;
     flex-direction: row;
     column-gap: 20px;
+
+    margin-bottom: 10px;
+
+    input {
+        width: 40px;
+    }
 }
 
 table {
@@ -95,12 +104,4 @@ table.sortable thead td[aria-sort="ascending"]::after {
     color: currentcolor;
     font-size: 100%;
     top: 0;
-}
-
-.rounded-box {
-    margin-bottom: 10px;
-
-    input {
-        width: 40px;
-    }
 }
