@@ -101,6 +101,11 @@ function calculate(
   settings: Settings
 ): CropData | "out-of-season" {
   // When is this crop in-season?
+  // Note: Cactus Fruit has no season; watch out for that!
+  if (!crop.season) {
+    return "out-of-season";
+  }
+
   const seasons: Season[] = [];
   const num_seasons = crop.multiseason ?? 1;
   for (let i = 0; i < num_seasons; i++) {
@@ -121,22 +126,41 @@ function calculate(
   // In the number of days remaining, how many harvests do we get?
   let num_harvests = 0;
   let useful_days = 0;
-  if (days_left >= crop.days_to_grow) {
-    num_harvests += 1;
-    useful_days += crop.days_to_grow;
-    if (crop.regrowth_period) {
-      const extra_harvests = Math.floor(
-        (days_left - crop.days_to_grow) / crop.regrowth_period
-      );
-      num_harvests += extra_harvests;
-      useful_days += extra_harvests * crop.regrowth_period;
+  if (!crop.special_handling) {
+    if (days_left >= crop.days_to_grow) {
+      num_harvests += 1;
+      useful_days += crop.days_to_grow;
+      if (crop.regrowth_period) {
+        const extra_harvests = Math.floor(
+          (days_left - crop.days_to_grow) / crop.regrowth_period
+        );
+        num_harvests += extra_harvests;
+        useful_days += extra_harvests * crop.regrowth_period;
+      }
     }
+  } else if (crop.special_handling == "tea") {
+    // Is this tea? If so, skip all that; compute it differently.
+
+    // First figure out how many we get during the first season.
+    const becomes_bush_at = settings.start_day + crop.days_to_grow;
+    const leaves_harvested_first_season = Math.max(
+      0, // can't go negative!
+      28 - Math.max(21, becomes_bush_at) // half-inclusive; tea bush does not produce on first day
+    );
+    // ^^ TODO: if i plant on the 1st, it becomes a bush on the 21st, and produces on the 2nd.
+    // if i plant on the 2nd, it becomes a bush on the 22nd -- it doesn't produce, i think?
+
+    // The other seasons we get all 7 harvests.
+    num_harvests = leaves_harvested_first_season + 7 * (seasons_left - 1);
+    useful_days = seasons_left * 28; // idk
+  } else {
+    throw new Error("Unrecognized special value: " + crop.special_handling);
   }
 
-  // How much is a crop worth, on average?
+  // How much is a crop worth, on average? Remember: tea has no quality.
   const base_price = crop.sell_price;
   let quality_price;
-  if (settings.quality_probabilities) {
+  if (settings.quality_probabilities && crop.special_handling !== "tea") {
     const q = settings.quality_probabilities;
     // zip together prices and probabilities
     quality_price = [
@@ -194,7 +218,8 @@ const COLUMNS: Column[] = [
   {
     name: "Name",
     cellText: (crop: CropData) => {
-      const img_name = `/img/${crop.definition.name.replace(" ", "_")}.png`;
+      // NOTE: replace(string, string) only replaces the first one
+      const img_name = `/img/${crop.definition.name.replace(/ /g, "_")}.png`;
       return (
         <>
           <img className="inline-icon" src={img_name} />
