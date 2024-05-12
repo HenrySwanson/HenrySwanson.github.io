@@ -28,7 +28,7 @@ module.exports = {
         parallel: false,
       },
       onAfterDone: {
-        scripts: ["pwd", 'cp dist/crops* ../static"'],
+        scripts: ["pwd", 'cp dist/crops* ../static/js"'],
         blocking: true,
         parallel: false,
       },

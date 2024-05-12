@@ -36,6 +36,10 @@ h1 {
   text-align: center;
 }
 
+p {
+    text-align: center;
+}
+
 .rounded-box {
   margin: 0 auto;
   width: fit-content;
@@ -104,4 +108,10 @@ table.sortable thead td[aria-sort="ascending"]::after {
   color: currentcolor;
   font-size: 100%;
   top: 0;
+}
+
+.inline-icon {
+  height: 1em;
+  vertical-align: -0.2ex;
+  margin-right: 0.3em;
 }

@@ -186,26 +186,48 @@ import { createRoot } from "react-dom/client";
 // Defines the set of columns for the whole table.
 type Column = {
   name: string;
-  cellText: (crop: CropData) => string;
+  cellText: (crop: CropData) => string | JSX.Element;
   compare: (a: CropData, b: CropData) => number;
 };
 
 const COLUMNS: Column[] = [
   {
     name: "Name",
-    cellText: (crop: CropData) => crop.definition.name,
+    cellText: (crop: CropData) => {
+      const img_name = `/img/${crop.definition.name.replace(" ", "_")}.png`;
+      return (
+        <>
+          <img className="inline-icon" src={img_name} />
+          {crop.definition.name}
+        </>
+      );
+    },
     compare: (a: CropData, b: CropData) =>
       a.definition.name.localeCompare(b.definition.name),
   },
   {
     name: "Seed Cost",
-    cellText: (crop: CropData) => crop.definition.seed_cost.toString(),
+    cellText: (crop: CropData) => {
+      return (
+        <>
+          <img className="inline-icon" src="/img/Gold.png" />
+          {crop.definition.seed_cost}g
+        </>
+      );
+    },
     compare: (a: CropData, b: CropData) =>
       a.definition.seed_cost - b.definition.seed_cost,
   },
   {
     name: "Sell Price",
-    cellText: (crop: CropData) => crop.definition.sell_price.toString(),
+    cellText: (crop: CropData) => {
+      return (
+        <>
+          <img className="inline-icon" src="/img/Gold.png" />
+          {crop.definition.sell_price}g
+        </>
+      );
+    },
     compare: (a: CropData, b: CropData) =>
       a.definition.sell_price - b.definition.sell_price,
   },
@@ -272,16 +294,28 @@ const COLUMNS: Column[] = [
   },
   {
     name: "Profit",
-    cellText: (crop: CropData) => crop.profit.toFixed(2),
+    cellText: (crop: CropData) => {
+      return (
+        <>
+          <img className="inline-icon" src="/img/Gold.png" />
+          {crop.profit.toFixed(2)}g
+        </>
+      );
+    },
     compare: (a: CropData, b: CropData) => a.profit - b.profit,
   },
   {
     name: "Daily Profit",
     cellText: (crop: CropData) => {
-      if (Number.isFinite(crop.daily_profit)) {
-        return crop.daily_profit.toFixed(2);
+      if (!Number.isFinite(crop.daily_profit)) {
+        return "-";
       }
-      return "-";
+      return (
+        <>
+          <img className="inline-icon" src="/img/Gold.png" />
+          {crop.daily_profit.toFixed(2)}g
+        </>
+      );
     },
     compare: (a: CropData, b: CropData) => a.daily_profit - b.daily_profit,
   },
@@ -544,15 +578,19 @@ function InputPanel({
           </tr>
           <tr>
             <td className={inputs.quality_checked ? undefined : "disabled"}>
+              <img className="inline-icon" src="/img/Base_Quality.png" />
               {(100 * quality.normal).toFixed(0)}%
             </td>
             <td className={inputs.quality_checked ? undefined : "disabled"}>
+              <img className="inline-icon" src="/img/Silver_Quality.png" />
               {(100 * quality.silver).toFixed(0)}%
             </td>
             <td className={inputs.quality_checked ? undefined : "disabled"}>
+              <img className="inline-icon" src="/img/Gold_Quality.png" />
               {(100 * quality.gold).toFixed(0)}%
             </td>
             <td className={inputs.quality_checked ? undefined : "disabled"}>
+              <img className="inline-icon" src="/img/Iridium_Quality.png" />
               {(100 * quality.iridium).toFixed(0)}%
             </td>
           </tr>

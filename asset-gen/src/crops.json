@@ -76,13 +76,6 @@
     "days_to_grow": 13
   },
   {
-    "name": "Rice",
-    "season": "Spring",
-    "seed_cost": 40,
-    "sell_price": 30,
-    "days_to_grow": 6
-  },
-  {
     "name": "Strawberry",
     "season": "Spring",
     "seed_cost": 100,
@@ -95,6 +88,13 @@
     "name": "Tulip",
     "season": "Spring",
     "seed_cost": 20,
+    "sell_price": 30,
+    "days_to_grow": 6
+  },
+  {
+    "name": "Unmilled Rice",
+    "season": "Spring",
+    "seed_cost": 40,
     "sell_price": 30,
     "days_to_grow": 6
   },
