@@ -37,7 +37,7 @@ h1 {
 }
 
 p {
-    text-align: center;
+  text-align: center;
 }
 
 .rounded-box {
@@ -49,67 +49,72 @@ p {
   border: 2px solid var(--dark-color);
   color: #ddd;
 
+  // spaces the rounded boxes apart from each other
+  margin-bottom: 10px;
+
   // just for input panel
   display: flex;
   flex-direction: row;
   column-gap: 20px;
-
-  margin-bottom: 10px;
-
   input {
     width: 40px;
   }
 }
 
 table {
+  // spaces the rows apart from each other
   border-collapse: separate;
   border-spacing: 0 10px;
 }
 
-thead td {
+td {
+  padding: 10px;
+  white-space: nowrap;
+  background-color: var(--dark-color);
+  border-left: 1px dashed var(--light-color);
+
+  // Rounded corners on the rows is tricky; <tr> doesn't take this property.
+  // Instead, do it by putting rounded corners on the first and last <td> elements.
+  &:first-child {
+    border-left: none; // also, don't draw the dashed border here
+    border-top-left-radius: 10px;
+    border-bottom-left-radius: 10px;
+  }
+
+  &:last-child {
+    border-bottom-right-radius: 10px;
+    border-top-right-radius: 10px;
+  }
+}
+
+// Because of that border radius trick, to change the background color on a row, we
+// instead have to change it on all the child <td> elements.
+tr.disabled td {
+  background-color: #444;
+  color: #666;
+}
+
+th {
   padding: 0 10px;
   font-weight: bold;
   text-align: center;
   color: white;
 }
 
-tbody td {
-  padding: 10px;
-  white-space: nowrap;
-  background-color: var(--dark-color);
-  border-left: 1px dashed var(--light-color);
-
-  &.disabled {
-    background-color: #444;
-    color: #666;
-  }
-}
-
-tbody td:first-child {
-  border-left: none;
-  border-top-left-radius: 10px;
-  border-bottom-left-radius: 10px;
-}
-
-tbody td:last-child {
-  border-bottom-right-radius: 10px;
-  border-top-right-radius: 10px;
-}
-
-table.sortable thead td[aria-sort="descending"]::after {
+// Put arrows next to header while sorting
+table.sortable thead th[aria-sort="descending"]::after {
   content: "▼";
   color: currentcolor;
-  font-size: 100%;
-  top: 0;
+  padding-left: 0.2em;
 }
 
-table.sortable thead td[aria-sort="ascending"]::after {
+table.sortable thead th[aria-sort="ascending"]::after {
   content: "▲";
   color: currentcolor;
-  font-size: 100%;
-  top: 0;
+  padding-left: 0.2em;
 }
 
+// Icons like crop images, gold coin, etc
 .inline-icon {
   height: 1em;
   vertical-align: -0.2ex;

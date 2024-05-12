@@ -328,7 +328,12 @@ function CropRow({ crop_data }: { crop_data: CropData }) {
     cells.push(<td key={col.name}>{value}</td>);
   }
 
-  return <tr>{cells}</tr>;
+  // Disable a row if it can't be harvested this season
+  return (
+    <tr className={crop_data.num_harvests > 0 ? undefined : "disabled"}>
+      {cells}
+    </tr>
+  );
 }
 
 type SortDirection = "ascending" | "descending";
@@ -383,9 +388,9 @@ function CropTable({ crop_data }: { crop_data: CropData[] }) {
   for (const [idx, col] of COLUMNS.entries()) {
     let aria_sort = currentSort?.[0] == idx ? currentSort[1] : undefined;
     header_cells.push(
-      <td key={col.name} onClick={() => handleClick(idx)} aria-sort={aria_sort}>
+      <th key={col.name} onClick={() => handleClick(idx)} aria-sort={aria_sort}>
         {col.name}
-      </td>
+      </th>
     );
   }
 
@@ -553,43 +558,34 @@ function InputPanel({
             </td>
             <td>{farmer_level_input}</td>
           </tr>
-          <tr>
-            <td className={tiller_checkbox_enabled ? undefined : "disabled"}>
+          <tr className={tiller_checkbox_enabled ? undefined : "disabled"}>
+            <td>
               <label htmlFor="enable-tiller">Tiller Profession?:</label>
             </td>
-            <td className={tiller_checkbox_enabled ? undefined : "disabled"}>
-              {tiller_checkbox}
-            </td>
+            <td>{tiller_checkbox}</td>
           </tr>
         </tbody>
       </table>
       <table>
         <tbody>
-          <tr>
-            <td
-              className={inputs.quality_checked ? undefined : "disabled"}
-              colSpan={3}
-            >
-              Average Quality Factor:
-            </td>
-            <td className={inputs.quality_checked ? undefined : "disabled"}>
-              {average_quality_score.toFixed(2)}
-            </td>
+          <tr className={inputs.quality_checked ? undefined : "disabled"}>
+            <td colSpan={3}>Average Quality Factor:</td>
+            <td>{average_quality_score.toFixed(2)}</td>
           </tr>
-          <tr>
-            <td className={inputs.quality_checked ? undefined : "disabled"}>
+          <tr className={inputs.quality_checked ? undefined : "disabled"}>
+            <td>
               <img className="inline-icon" src="/img/Base_Quality.png" />
               {(100 * quality.normal).toFixed(0)}%
             </td>
-            <td className={inputs.quality_checked ? undefined : "disabled"}>
+            <td>
               <img className="inline-icon" src="/img/Silver_Quality.png" />
               {(100 * quality.silver).toFixed(0)}%
             </td>
-            <td className={inputs.quality_checked ? undefined : "disabled"}>
+            <td>
               <img className="inline-icon" src="/img/Gold_Quality.png" />
               {(100 * quality.gold).toFixed(0)}%
             </td>
-            <td className={inputs.quality_checked ? undefined : "disabled"}>
+            <td>
               <img className="inline-icon" src="/img/Iridium_Quality.png" />
               {(100 * quality.iridium).toFixed(0)}%
             </td>
