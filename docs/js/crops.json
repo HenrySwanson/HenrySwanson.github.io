@@ -313,5 +313,37 @@
         "sell_price": 75,
         "days_to_grow": 12,
         "regrowth_period": 3
+    },
+    {
+        "name": "Pineapple",
+        "season": "Summer",
+        "seed_cost": 400,
+        "sell_price": 300,
+        "days_to_grow": 14,
+        "regrowth_period": 7
+    },
+    {
+        "name": "Taro Root",
+        "season": "Summer",
+        "seed_cost": 24,
+        "sell_price": 100,
+        "days_to_grow": 7
+    },
+    {
+        "name": "Sweet Gem Berry",
+        "season": "Fall",
+        "seed_cost": 1000,
+        "sell_price": 3000,
+        "days_to_grow": 24
+    },
+    {
+        "name": "Tea Leaves",
+        "season": "Spring",
+        "multiseason": 3,
+        "seed_cost": 0,
+        "sell_price": 50,
+        "days_to_grow": 20,
+        "regrowth_period": 1,
+        "special_handling": "tea"
     }
 ]

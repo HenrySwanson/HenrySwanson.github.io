@@ -634,9 +634,19 @@ function Root() {
   const [inputs, setInputs] = useState<Inputs>(DEFAULT_INPUTS);
 
   function updateInputs(i: Inputs) {
-    // Do some quick cleanup
-    i.start_day = clamp(i.start_day, 1, 28);
+    // Do some quick massaging of the input data.
+    // TODO: is this the actual max/min?
     i.farming_level = clamp(i.farming_level, 1, 10);
+
+    // When the user ticks the season too far, wrap around and bump the season, for nice UX.
+    if (i.start_day <= 0) {
+      i.start_day = 28;
+      i.season = (i.season + 3) % 4;
+    } else if (i.start_day > 28) {
+      i.start_day = 1;
+      i.season = (i.season + 1) % 4;
+    }
+
     setInputs(i);
   }
 
@@ -678,7 +688,7 @@ function initialize() {
 
   // Create React root
   const root = createRoot(document.getElementById("root")!);
-  root.render(<Root></Root>);
+  root.render(<Root />);
 }
 
 // Alrighty, we're ready to go! Wait for the DOM to finish loading (or see if it
