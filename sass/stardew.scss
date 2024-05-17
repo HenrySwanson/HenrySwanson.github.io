@@ -36,10 +36,6 @@ h1 {
   text-align: center;
 }
 
-p {
-  text-align: center;
-}
-
 .rounded-box {
   margin: 0 auto;
   width: fit-content;
@@ -56,6 +52,7 @@ p {
   display: flex;
   flex-direction: row;
   column-gap: 20px;
+
   input {
     width: 40px;
   }
@@ -119,4 +116,10 @@ table.sortable thead th[aria-sort="ascending"]::after {
   height: 1em;
   vertical-align: -0.2ex;
   margin-right: 0.3em;
+}
+
+// Text at the bottom of the page
+.centeredtext {
+  margin: 0 auto;
+  width: fit-content;
 }
