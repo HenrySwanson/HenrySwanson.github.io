@@ -44,6 +44,13 @@ type QualityProbabilities = {
   iridium: number;
 };
 
+const NO_QUALITY: QualityProbabilities = {
+  normal: 1,
+  silver: 0,
+  gold: 0,
+  iridium: 0,
+};
+
 export const SILVER_MULTIPLIER = 1.25;
 export const GOLD_MULTIPLIER = 1.5;
 export const IRIDIUM_MULTIPLIER = 2.0;
@@ -88,10 +95,17 @@ export type Settings = {
   tiller_enabled: boolean;
 };
 
-export function calculate(
+type Harvests = {
+  number: number;
+  duration: number;
+};
+
+export function getNumberOfHarvests(
   crop: CropDefinition,
-  settings: Settings
-): CropData | "out-of-season" {
+  current_season: Season,
+  current_day: number,
+  multiseason_enabled: boolean
+): Harvests | "out-of-season" {
   // When is this crop in-season?
   // Note: Cactus Fruit has no season; watch out for that!
   if (!crop.season) {
@@ -105,20 +119,21 @@ export function calculate(
   }
 
   // Bail out if we're out of season
-  if (!seasons.includes(settings.season)) {
+  if (!seasons.includes(current_season)) {
     return "out-of-season";
   }
 
   // How many days do we have left?
-  const seasons_left = settings.multiseason_enabled
-    ? seasons.length - seasons.indexOf(settings.season)
+  const seasons_left = multiseason_enabled
+    ? seasons.length - seasons.indexOf(current_season)
     : 1;
-  const days_left = 28 * seasons_left - settings.start_day;
+  const days_left = 28 * seasons_left - current_day;
 
   // In the number of days remaining, how many harvests do we get?
-  let num_harvests = 0;
-  let useful_days = 0;
   if (!crop.special_handling) {
+    let num_harvests = 0;
+    let useful_days = 0;
+
     if (days_left >= crop.days_to_grow) {
       num_harvests += 1;
       useful_days += crop.days_to_grow;
@@ -130,11 +145,16 @@ export function calculate(
         useful_days += extra_harvests * crop.regrowth_period;
       }
     }
+
+    return {
+      number: num_harvests,
+      duration: useful_days,
+    };
   } else if (crop.special_handling == "tea") {
     // Is this tea? If so, skip all that; compute it differently.
 
     // First figure out how many we get during the first season.
-    const becomes_bush_at = settings.start_day + crop.days_to_grow;
+    const becomes_bush_at = current_day + crop.days_to_grow;
     const leaves_harvested_first_season = Math.max(
       0, // can't go negative!
       28 - Math.max(21, becomes_bush_at) // half-inclusive; tea bush does not produce on first day
@@ -142,53 +162,99 @@ export function calculate(
     // ^^ TODO: if i plant on the 1st, it becomes a bush on the 21st, and produces on the 2nd.
     // if i plant on the 2nd, it becomes a bush on the 22nd -- it doesn't produce, i think?
 
-    // The other seasons we get all 7 harvests.
-    num_harvests = leaves_harvested_first_season + 7 * (seasons_left - 1);
-    useful_days = seasons_left * 28; // idk
+    return {
+      // The other seasons we get all 7 harvests.
+      number: leaves_harvested_first_season + 7 * (seasons_left - 1),
+      duration: seasons_left * 28, // idk
+    };
   } else {
     throw new Error("Unrecognized special value: " + crop.special_handling);
   }
+}
 
-  // How much is a crop worth, on average? Remember: tea has no quality.
-  const base_price = crop.sell_price;
-  let quality_price;
-  if (settings.quality_probabilities && crop.special_handling !== "tea") {
-    const q = settings.quality_probabilities;
-    // zip together prices and probabilities
-    quality_price = [
-      [1.0, q.normal],
-      [SILVER_MULTIPLIER, q.silver],
-      [GOLD_MULTIPLIER, q.gold],
-      [IRIDIUM_MULTIPLIER, q.iridium],
-    ]
-      // prices are rounded down!
-      .map(([multiplier, p]) => Math.trunc(multiplier * base_price) * p)
-      .reduce((a, b) => a + b);
+type ExpectedCrops = {
+  normal: number;
+  silver: number;
+  gold: number;
+  iridium: number;
+};
+
+export function getExpectedCropsPerHarvest(
+  crop: CropDefinition,
+  q: QualityProbabilities
+): ExpectedCrops {
+  if (!crop.special_handling) {
+    // We can sometimes get multiple crops per harvest, but all the extra crops
+    // will be regular quality.
+    // TODO: is this true? i see conflicting sources online
+    const crop_yield =
+      (crop.yield ?? 1) + (crop.percent_chance_extra ?? 0) / 100.0;
+    return {
+      normal: q.normal + crop_yield - 1,
+      silver: q.silver,
+      gold: q.gold,
+      iridium: q.iridium,
+    };
+  } else if (crop.special_handling == "tea") {
+    // Tea has no quality and no multipliers
+    return NO_QUALITY;
   } else {
-    quality_price = base_price;
+    throw new Error("Unrecognized special " + crop.special_handling);
+  }
+}
+
+export function calculate(
+  crop: CropDefinition,
+  settings: Settings
+): CropData | "out-of-season" {
+  // How many harvests do we get, if any?
+  const harvests = getNumberOfHarvests(
+    crop,
+    settings.season,
+    settings.start_day,
+    settings.multiseason_enabled
+  );
+
+  if (harvests == "out-of-season") {
+    return "out-of-season";
   }
 
-  // We can sometimes get multiple crops per harvest, but all the extra crops
-  // will be regular quality.
-  // TODO: is this true? i see conflicting sources online
+  // How many crops of each quality do we expect to get?
+  const quality_probabilities = settings.quality_probabilities ?? NO_QUALITY;
+  const per_harvest = getExpectedCropsPerHarvest(crop, quality_probabilities);
+
+  // How much are those crops worth?
+  // prices are rounded down!
+  const base_price = crop.sell_price;
+  const silver_price = Math.trunc(SILVER_MULTIPLIER * base_price);
+  const gold_price = Math.trunc(GOLD_MULTIPLIER * base_price);
+  const iridium_price = Math.trunc(IRIDIUM_MULTIPLIER * base_price);
+
+  // So, putting it all together
   const num_crops_per_harvest =
-    (crop.yield ?? 1) + (crop.percent_chance_extra ?? 0) / 100.0;
+    per_harvest.normal +
+    per_harvest.silver +
+    per_harvest.gold +
+    per_harvest.iridium;
   let revenue_per_harvest =
-    quality_price + (num_crops_per_harvest - 1) * base_price;
+    per_harvest.normal * base_price +
+    per_harvest.silver * silver_price +
+    per_harvest.gold * gold_price +
+    per_harvest.iridium * iridium_price;
 
   if (settings.tiller_enabled) {
     revenue_per_harvest *= 1.1; // could maybe do this before to get integer prices
   }
 
   // Okay, let's calculate everything!
-  const profit = revenue_per_harvest * num_harvests - crop.seed_cost;
-  const daily_profit = profit / useful_days;
+  const profit = revenue_per_harvest * harvests.number - crop.seed_cost;
+  const daily_profit = profit / harvests.duration;
 
   return {
     definition: crop,
-    useful_days,
-    num_harvests,
-    num_crops: num_crops_per_harvest * num_harvests,
+    useful_days: harvests.duration,
+    num_harvests: harvests.number,
+    num_crops: num_crops_per_harvest * harvests.number,
     profit,
     daily_profit,
   };
