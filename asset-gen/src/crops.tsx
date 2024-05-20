@@ -2,7 +2,7 @@
 
 import CROP_DEFINITIONS from "./crop_definitions.json";
 
-type CropDefinition = (typeof CROP_DEFINITIONS)[number];
+export type CropDefinition = (typeof CROP_DEFINITIONS)[number];
 
 export enum Season {
   SPRING,
