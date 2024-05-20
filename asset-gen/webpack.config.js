@@ -2,7 +2,7 @@ const path = require("path");
 const WebpackShellPluginNext = require("webpack-shell-plugin-next");
 
 module.exports = {
-  entry: "./src/crops.tsx",
+  entry: "./src/stardew-main.tsx",
   devtool: "source-map",
   module: {
     rules: [
@@ -17,7 +17,7 @@ module.exports = {
     extensions: [".tsx", ".ts", ".js"],
   },
   output: {
-    filename: "crops.js",
+    filename: "stardew-main.js",
     path: path.resolve(__dirname, "dist"),
   },
   plugins: [
@@ -28,7 +28,7 @@ module.exports = {
         parallel: false,
       },
       onAfterDone: {
-        scripts: ["pwd", 'cp dist/crops* ../static/js"'],
+        scripts: ["pwd", 'cp dist/stardew-main* ../static/js"'],
         blocking: true,
         parallel: false,
       },

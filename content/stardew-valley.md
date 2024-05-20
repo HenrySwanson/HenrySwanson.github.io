@@ -4,7 +4,7 @@ title = "Stardew Valley Crop Calculator"
 stylesheet = "/stardew.css"
 +++
 
-<script src="/js/crops.js" async></script>
+<script src="/js/stardew-main.js" async></script>
 
 <div id="root"></div>
 
