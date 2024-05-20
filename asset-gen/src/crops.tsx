@@ -37,14 +37,14 @@ export type CropData = {
   daily_profit: number;
 };
 
-type QualityProbabilities = {
+export type QualityProbabilities = {
   normal: number;
   silver: number;
   gold: number;
   iridium: number;
 };
 
-const NO_QUALITY: QualityProbabilities = {
+export const NO_QUALITY: QualityProbabilities = {
   normal: 1,
   silver: 0,
   gold: 0,
@@ -165,14 +165,14 @@ export function getNumberOfHarvests(
     return {
       // The other seasons we get all 7 harvests.
       number: leaves_harvested_first_season + 7 * (seasons_left - 1),
-      duration: seasons_left * 28, // idk
+      duration: days_left, // idk
     };
   } else {
     throw new Error("Unrecognized special value: " + crop.special_handling);
   }
 }
 
-type ExpectedCrops = {
+export type ExpectedCrops = {
   normal: number;
   silver: number;
   gold: number;

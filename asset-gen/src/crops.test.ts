@@ -9,6 +9,11 @@ import {
   IRIDIUM_MULTIPLIER,
   calculate,
   Settings,
+  getNumberOfHarvests,
+  getExpectedCropsPerHarvest,
+  NO_QUALITY,
+  QualityProbabilities,
+  ExpectedCrops,
 } from "./crops";
 
 const DEFAULT_SETTINGS: Settings = {
@@ -33,135 +38,142 @@ function expectIsInSeason(
   expect(c).not.toBe("out-of-season");
 }
 
-describe("testing crop calculation", () => {
-  const cauliflower = getCrop("Cauliflower");
+describe("number of harvests", () => {
+  function expectHelper(
+    crop: CropDefinition,
+    season: Season,
+    day: number,
+    multiseason_enabled: boolean,
+    num_harvests: number,
+    duration: number
+  ) {
+    expect(
+      getNumberOfHarvests(crop, season, day, multiseason_enabled)
+    ).toStrictEqual({
+      number: num_harvests,
+      duration,
+    });
+  }
 
-  test("cauliflower spring 1", () => {
-    const output = calculate(cauliflower, DEFAULT_SETTINGS);
+  test("cauliflower", () => {
+    const cauliflower = getCrop("Cauliflower");
 
-    const expectedProfit = cauliflower.sell_price - cauliflower.seed_cost;
-    const expectedDailyProfit = expectedProfit / 12;
-
-    expectIsInSeason(output);
-    expect(output.useful_days).toBe(12);
-    expect(output.num_harvests).toBe(1);
-    expect(output.num_crops).toBe(1);
-    expect(output.profit).toBe(expectedProfit);
-    expect(output.daily_profit).toBe(expectedDailyProfit);
+    expectHelper(cauliflower, Season.SPRING, 1, false, 1, 12);
+    expectHelper(cauliflower, Season.SPRING, 10, false, 1, 12);
+    expectHelper(cauliflower, Season.SPRING, 16, false, 1, 12);
+    expectHelper(cauliflower, Season.SPRING, 17, false, 0, 0);
+    expect(getNumberOfHarvests(cauliflower, Season.SUMMER, 1, false)).toBe(
+      "out-of-season"
+    );
   });
 
-  test("cauliflower spring 20", () => {
-    const settings: Settings = {
-      ...DEFAULT_SETTINGS,
-      start_day: 20,
-    };
-    const output = calculate(cauliflower, settings);
+  test("strawberry", () => {
+    const strawberry = getCrop("Strawberry");
 
-    expectIsInSeason(output);
-    expect(output.useful_days).toBe(0);
-    expect(output.num_harvests).toBe(0);
-    expect(output.num_crops).toBe(0);
-    expect(output.profit).toBe(-cauliflower.seed_cost);
-    expect(output.daily_profit).toBe(-Infinity);
+    // Days 9, 13, 17, 21, 25
+    expectHelper(strawberry, Season.SPRING, 1, false, 5, 24);
+    // Days 12, 16, 20, 24, 28
+    expectHelper(strawberry, Season.SPRING, 4, false, 5, 24);
+    // Days 13, 17, 21, 25
+    expectHelper(strawberry, Season.SPRING, 5, false, 4, 20);
+    // Day 25, not quite enough time to get another harvest
+    expectHelper(strawberry, Season.SPRING, 17, false, 1, 8);
+    // Day 28
+    expectHelper(strawberry, Season.SPRING, 20, false, 1, 8);
+    // No harvest
+    expectHelper(strawberry, Season.SPRING, 21, false, 0, 0);
   });
 
-  test("cauliflower summer 1", () => {
-    const settings: Settings = {
-      ...DEFAULT_SETTINGS,
-      season: Season.SUMMER,
-    };
-    const output = calculate(cauliflower, settings);
+  test("tea", () => {
+    const tea = getCrop("Tea Leaves");
 
-    expect(output).toBe("out-of-season");
+    expectHelper(tea, Season.SPRING, 1, false, 7, 27);
+    expectHelper(tea, Season.SPRING, 2, false, 6, 26);
+    expectHelper(tea, Season.SPRING, 3, false, 5, 25);
+    expectHelper(tea, Season.SPRING, 7, false, 1, 21);
+    expectHelper(tea, Season.SPRING, 8, false, 0, 20);
   });
+});
 
-  const strawberry = getCrop("Strawberry");
+describe("expected crops", () => {
+  function expectHelper(
+    crop_name: string,
+    quality_probabilities: QualityProbabilities,
+    expected_crops: ExpectedCrops
+  ) {
+    const crop = getCrop(crop_name);
+    const output = getExpectedCropsPerHarvest(crop, quality_probabilities);
+    expect(output.normal).toBeCloseTo(expected_crops.normal);
+    expect(output.silver).toBeCloseTo(expected_crops.silver);
+    expect(output.gold).toBeCloseTo(expected_crops.gold);
+    expect(output.iridium).toBeCloseTo(expected_crops.iridium);
+  }
 
-  test("strawberry spring 1", () => {
-    const output = calculate(strawberry, DEFAULT_SETTINGS);
-
-    const expectedHarvests = 5; // Day 9, 13, 17, 21, 25
-    const expectedCrops = 5.1; // +2% chance
-    const expectedProfit = 5.1 * strawberry.sell_price - strawberry.seed_cost;
-    const expectedDailyProfit = expectedProfit / 24;
-
-    expectIsInSeason(output);
-    expect(output.useful_days).toBe(24);
-    expect(output.num_harvests).toBe(expectedHarvests);
-    expect(output.num_crops).toBe(expectedCrops);
-    expect(output.profit).toBe(expectedProfit);
-    expect(output.daily_profit).toBe(expectedDailyProfit);
-  });
-
-  test("strawberry spring 4", () => {
-    const output = calculate(strawberry, { ...DEFAULT_SETTINGS, start_day: 4 });
-
-    const expectedHarvests = 5; // Day 12, 16, 20, 24, 28
-    const expectedCrops = 5 * 1.02; // +2% chance
-    const expectedProfit =
-      5 * 1.02 * strawberry.sell_price - strawberry.seed_cost;
-    const expectedDailyProfit = expectedProfit / 24;
-
-    expectIsInSeason(output);
-    expect(output.useful_days).toBe(24);
-    expect(output.num_harvests).toBe(expectedHarvests);
-    expect(output.num_crops).toBe(expectedCrops);
-    expect(output.profit).toBe(expectedProfit);
-    expect(output.daily_profit).toBe(expectedDailyProfit);
-  });
-
-  test("strawberry spring 5", () => {
-    const output = calculate(strawberry, { ...DEFAULT_SETTINGS, start_day: 5 });
-
-    const expectedHarvests = 4; // Day 13, 17, 21, 25
-    const expectedCrops = 4 * 1.02; // +2% chance
-    const expectedProfit =
-      4 * 1.02 * strawberry.sell_price - strawberry.seed_cost;
-    const expectedDailyProfit = expectedProfit / 20;
-
-    expectIsInSeason(output);
-    expect(output.useful_days).toBe(20);
-    expect(output.num_harvests).toBe(expectedHarvests);
-    expect(output.num_crops).toBe(expectedCrops);
-    expect(output.profit).toBe(expectedProfit);
-    expect(output.daily_profit).toBe(expectedDailyProfit);
-  });
-
-  test("strawberry spring 20", () => {
-    const output = calculate(strawberry, {
-      ...DEFAULT_SETTINGS,
-      start_day: 20,
+  test("no quality", () => {
+    expectHelper("Cauliflower", NO_QUALITY, {
+      normal: 1.0,
+      silver: 0.0,
+      gold: 0.0,
+      iridium: 0.0,
     });
 
-    const expectedHarvests = 1; // Day 28
-    const expectedCrops = 1.02; // +2% chance
-    const expectedProfit = 1.02 * strawberry.sell_price - strawberry.seed_cost;
-    const expectedDailyProfit = expectedProfit / 8;
-
-    expectIsInSeason(output);
-    expect(output.useful_days).toBe(8);
-    expect(output.num_harvests).toBe(expectedHarvests);
-    expect(output.num_crops).toBe(expectedCrops);
-    expect(output.profit).toBe(expectedProfit);
-    expect(output.daily_profit).toBe(expectedDailyProfit);
-  });
-
-  test("strawberry spring 21", () => {
-    const output = calculate(strawberry, {
-      ...DEFAULT_SETTINGS,
-      start_day: 21,
+    expectHelper("Potato", NO_QUALITY, {
+      normal: 1.25, // there's a 25% chance of extras
+      silver: 0.0,
+      gold: 0.0,
+      iridium: 0.0,
     });
 
-    const expectedHarvests = 0;
-    const expectedCrops = 0;
-    const expectedProfit = -strawberry.seed_cost;
-    const expectedDailyProfit = -Infinity;
+    expectHelper("Coffee Bean", NO_QUALITY, {
+      normal: 4.02, // there's a 2% chance of extras
+      silver: 0.0,
+      gold: 0.0,
+      iridium: 0.0,
+    });
 
-    expectIsInSeason(output);
-    expect(output.useful_days).toBe(0);
-    expect(output.num_harvests).toBe(expectedHarvests);
-    expect(output.num_crops).toBe(expectedCrops);
-    expect(output.profit).toBe(expectedProfit);
-    expect(output.daily_profit).toBe(expectedDailyProfit);
+    expectHelper("Tea Leaves", NO_QUALITY, {
+      normal: 1.0,
+      silver: 0.0,
+      gold: 0.0,
+      iridium: 0.0,
+    });
+  });
+
+  test("with quality", () => {
+    const quality = {
+      normal: 0.4,
+      silver: 0.3,
+      gold: 0.2,
+      iridium: 0.1,
+    };
+
+    expectHelper("Cauliflower", quality, {
+      normal: 0.4,
+      silver: 0.3,
+      gold: 0.2,
+      iridium: 0.1,
+    });
+
+    expectHelper("Potato", quality, {
+      normal: 0.4 + 0.25, // there's a 25% chance of extras
+      silver: 0.3,
+      gold: 0.2,
+      iridium: 0.1,
+    });
+
+    expectHelper("Coffee Bean", quality, {
+      normal: 3.4 + 0.02, // there's a 2% chance of extras
+      silver: 0.3,
+      gold: 0.2,
+      iridium: 0.1,
+    });
+
+    // ignore quality!
+    expectHelper("Tea Leaves", quality, {
+      normal: 1.0,
+      silver: 0.0,
+      gold: 0.0,
+      iridium: 0.0,
+    });
   });
 });
