@@ -82,6 +82,61 @@ describe("number of harvests", () => {
     expectHelper(strawberry, Season.SPRING, 20, false, 1, 8);
     // No harvest
     expectHelper(strawberry, Season.SPRING, 21, false, 0, 0);
+    // Out of season (different from no harvest!)
+    expect(getNumberOfHarvests(strawberry, Season.SUMMER, 1, false)).toBe(
+      "out-of-season"
+    );
+  });
+
+  test("multiseason", () => {
+    // Single-crop
+    const sunflower = getCrop("Sunflower");
+    // Multi-crop
+    const corn = getCrop("Corn");
+
+    // Tea is just weird always, test it in its own thing
+
+    // Will it grow in the first season, as normal?
+    expectHelper(sunflower, Season.SUMMER, 1, false, 1, 8);
+    expectHelper(sunflower, Season.SUMMER, 20, false, 1, 8);
+    expectHelper(sunflower, Season.SUMMER, 21, false, 0, 0);
+    expectHelper(corn, Season.SUMMER, 1, false, 4, 26);
+    expectHelper(corn, Season.SUMMER, 3, false, 3, 22);
+    expectHelper(corn, Season.SUMMER, 14, false, 1, 14);
+    expectHelper(corn, Season.SUMMER, 15, false, 0, 0);
+
+    // What about the second season?
+    expectHelper(sunflower, Season.FALL, 1, false, 1, 8);
+    expectHelper(sunflower, Season.FALL, 20, false, 1, 8);
+    expectHelper(sunflower, Season.FALL, 21, false, 0, 0);
+    expectHelper(corn, Season.FALL, 1, false, 4, 26);
+    expectHelper(corn, Season.FALL, 14, false, 1, 14);
+    expectHelper(corn, Season.FALL, 15, false, 0, 0);
+
+    // Can it cross over when the flag is set?
+    expectHelper(sunflower, Season.SUMMER, 21, true, 1, 8);
+    expectHelper(sunflower, Season.SUMMER, 28, true, 1, 8);
+    expectHelper(corn, Season.SUMMER, 1, true, 4 + 7, 26 + 28);
+    expectHelper(corn, Season.SUMMER, 2, true, 4 + 7, 26 + 28);
+    expectHelper(corn, Season.SUMMER, 3, true, 3 + 7, 22 + 28);
+
+    // It will not cross over into the wrong season
+    expectHelper(sunflower, Season.FALL, 21, true, 0, 0);
+    expectHelper(corn, Season.FALL, 25, true, 0, 0);
+
+    // It also won't grow in the wrong season at all
+    expect(getNumberOfHarvests(sunflower, Season.SPRING, 1, true)).toBe(
+      "out-of-season"
+    );
+    expect(getNumberOfHarvests(sunflower, Season.SPRING, 28, true)).toBe(
+      "out-of-season"
+    );
+    expect(getNumberOfHarvests(corn, Season.SPRING, 1, true)).toBe(
+      "out-of-season"
+    );
+    expect(getNumberOfHarvests(corn, Season.SPRING, 28, true)).toBe(
+      "out-of-season"
+    );
   });
 
   test("tea", () => {
