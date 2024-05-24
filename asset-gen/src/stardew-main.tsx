@@ -4,11 +4,10 @@ import {
   CropData,
   Season,
   computeQuality,
-  SILVER_MULTIPLIER,
-  GOLD_MULTIPLIER,
-  IRIDIUM_MULTIPLIER,
   calculate,
   Settings,
+  PRICE_MULTIPLIERS,
+  qualityDot,
 } from "./crops";
 
 import { useState } from "react";
@@ -348,11 +347,7 @@ function InputPanel({
 
   // Compute some values for things
   const quality = computeQuality(inputs.farming_level);
-  const average_quality_score =
-    quality.normal +
-    quality.silver * SILVER_MULTIPLIER +
-    quality.gold * GOLD_MULTIPLIER +
-    quality.iridium * IRIDIUM_MULTIPLIER;
+  const average_quality_score = qualityDot(quality, PRICE_MULTIPLIERS);
   const tiller_checkbox_enabled = inputs.farming_level >= 5;
 
   // TODO: should this be a <form>?

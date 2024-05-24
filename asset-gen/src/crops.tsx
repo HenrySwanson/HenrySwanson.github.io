@@ -37,25 +37,59 @@ export type CropData = {
   daily_profit: number;
 };
 
-export type QualityProbabilities = {
-  normal: number;
-  silver: number;
-  gold: number;
-  iridium: number;
+export type QualityVector<T> = {
+  normal: T;
+  silver: T;
+  gold: T;
+  iridium: T;
 };
 
-export const NO_QUALITY: QualityProbabilities = {
+function qualityMap<T, U>(q: QualityVector<T>, fn: (_: T) => U): QualityVector<U> {
+  return {
+    normal: fn(q.normal),
+    silver: fn(q.silver),
+    gold: fn(q.gold),
+    iridium: fn(q.iridium),
+  };
+}
+
+function qualityZip<T1, T2, U>(
+  q1: QualityVector<T1>,
+  q2: QualityVector<T2>,
+  fn: (_1: T1, _2: T2) => U
+): QualityVector<U> {
+  return {
+    normal: fn(q1.normal, q2.normal),
+    silver: fn(q1.silver, q2.silver),
+    gold: fn(q1.gold, q2.gold),
+    iridium: fn(q1.iridium, q2.iridium),
+  };
+}
+
+function qualitySum(q: QualityVector<number>): number {
+  return q.normal + q.silver + q.gold + q.iridium;
+}
+
+export function qualityDot(q1: QualityVector<number>, q2: QualityVector<number>): number {
+  return qualitySum(qualityZip(q1, q2, (v1, v2) => v1 * v2));
+}
+
+export const NO_QUALITY: QualityVector<number> = {
   normal: 1,
   silver: 0,
   gold: 0,
   iridium: 0,
 };
 
-export const SILVER_MULTIPLIER = 1.25;
-export const GOLD_MULTIPLIER = 1.5;
-export const IRIDIUM_MULTIPLIER = 2.0;
+export const PRICE_MULTIPLIERS: QualityVector<number> = {
+  normal: 1.0,
+  silver: 1.25,
+  gold: 1.5,
+  iridium: 2.0,
+};
 
-export function computeQuality(farming_level: number): QualityProbabilities {
+/// Returns the quality ratios for a given farming level
+export function computeQuality(farming_level: number): QualityVector<number> {
   // https://stardewvalleywiki.com/Farming#Complete_Formula_2
   const fertilizer_level = 0;
 
@@ -91,7 +125,7 @@ export type Settings = {
   season: Season;
   start_day: number;
   multiseason_enabled: boolean;
-  quality_probabilities: QualityProbabilities | null;
+  quality_probabilities: QualityVector<number> | null;
   tiller_enabled: boolean;
 };
 
@@ -172,29 +206,21 @@ export function getNumberOfHarvests(
   }
 }
 
-export type ExpectedCrops = {
-  normal: number;
-  silver: number;
-  gold: number;
-  iridium: number;
-};
-
 export function getExpectedCropsPerHarvest(
   crop: CropDefinition,
-  q: QualityProbabilities
-): ExpectedCrops {
+  q: QualityVector<number>
+): QualityVector<number> {
   if (!crop.special_handling) {
     // We can sometimes get multiple crops per harvest, but all the extra crops
     // will be regular quality.
     // TODO: is this true? i see conflicting sources online
     const crop_yield =
       (crop.yield ?? 1) + (crop.percent_chance_extra ?? 0) / 100.0;
-    return {
-      normal: q.normal + crop_yield - 1,
-      silver: q.silver,
-      gold: q.gold,
-      iridium: q.iridium,
-    };
+
+    // Make a full copy; no cloning issues!
+    let output = qualityMap(q, x => x);
+    output.normal += crop_yield - 1;
+    return output;
   } else if (crop.special_handling == "tea") {
     // Tea has no quality and no multipliers
     return NO_QUALITY;
@@ -225,22 +251,13 @@ export function calculate(
 
   // How much are those crops worth?
   // prices are rounded down!
-  const base_price = crop.sell_price;
-  const silver_price = Math.trunc(SILVER_MULTIPLIER * base_price);
-  const gold_price = Math.trunc(GOLD_MULTIPLIER * base_price);
-  const iridium_price = Math.trunc(IRIDIUM_MULTIPLIER * base_price);
+  const prices = qualityMap(PRICE_MULTIPLIERS, (multiplier) =>
+    Math.trunc(multiplier * crop.sell_price)
+  );
 
   // So, putting it all together
-  const num_crops_per_harvest =
-    per_harvest.normal +
-    per_harvest.silver +
-    per_harvest.gold +
-    per_harvest.iridium;
-  let revenue_per_harvest =
-    per_harvest.normal * base_price +
-    per_harvest.silver * silver_price +
-    per_harvest.gold * gold_price +
-    per_harvest.iridium * iridium_price;
+  const num_crops_per_harvest = qualitySum(per_harvest);
+  let revenue_per_harvest = qualityDot(per_harvest, prices);
 
   if (settings.tiller_enabled) {
     revenue_per_harvest *= 1.1; // could maybe do this before to get integer prices

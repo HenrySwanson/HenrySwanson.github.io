@@ -3,17 +3,11 @@ import {
   CropData,
   CropDefinition,
   Season,
-  computeQuality,
-  SILVER_MULTIPLIER,
-  GOLD_MULTIPLIER,
-  IRIDIUM_MULTIPLIER,
-  calculate,
   Settings,
   getNumberOfHarvests,
   getExpectedCropsPerHarvest,
   NO_QUALITY,
-  QualityProbabilities,
-  ExpectedCrops,
+  QualityVector,
 } from "./crops";
 
 const DEFAULT_SETTINGS: Settings = {
@@ -153,8 +147,8 @@ describe("number of harvests", () => {
 describe("expected crops", () => {
   function expectHelper(
     crop_name: string,
-    quality_probabilities: QualityProbabilities,
-    expected_crops: ExpectedCrops
+    quality_probabilities: QualityVector<number>,
+    expected_crops: QualityVector<number>
   ) {
     const crop = getCrop(crop_name);
     const output = getExpectedCropsPerHarvest(crop, quality_probabilities);
