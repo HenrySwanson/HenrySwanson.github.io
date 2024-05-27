@@ -10,14 +10,6 @@ import {
   QualityVector,
 } from "./crops";
 
-const DEFAULT_SETTINGS: Settings = {
-  season: Season.SPRING,
-  start_day: 1,
-  multiseason_enabled: false,
-  quality_probabilities: null,
-  tiller_enabled: false,
-};
-
 function getCrop(name: string): CropDefinition {
   const crop = CROP_DEFINITIONS.find((c) => c.name == name);
   if (crop === undefined) {
@@ -211,13 +203,13 @@ describe("expected crops", () => {
     });
 
     expectHelper("Coffee Bean", quality, {
-      normal: 3.4 + 0.02, // there's a 2% chance of extras
+      normal: 3.4 + 0.02, // 3 extra beans, with a 2% chance of extras
       silver: 0.3,
       gold: 0.2,
       iridium: 0.1,
     });
 
-    // ignore quality!
+    // tea doesn't have quality!
     expectHelper("Tea Leaves", quality, {
       normal: 1.0,
       silver: 0.0,

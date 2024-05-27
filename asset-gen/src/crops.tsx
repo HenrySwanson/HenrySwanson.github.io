@@ -44,7 +44,10 @@ export type QualityVector<T> = {
   iridium: T;
 };
 
-function qualityMap<T, U>(q: QualityVector<T>, fn: (_: T) => U): QualityVector<U> {
+function qualityMap<T, U>(
+  q: QualityVector<T>,
+  fn: (_: T) => U
+): QualityVector<U> {
   return {
     normal: fn(q.normal),
     silver: fn(q.silver),
@@ -70,7 +73,10 @@ function qualitySum(q: QualityVector<number>): number {
   return q.normal + q.silver + q.gold + q.iridium;
 }
 
-export function qualityDot(q1: QualityVector<number>, q2: QualityVector<number>): number {
+export function qualityDot(
+  q1: QualityVector<number>,
+  q2: QualityVector<number>
+): number {
   return qualitySum(qualityZip(q1, q2, (v1, v2) => v1 * v2));
 }
 
@@ -218,7 +224,7 @@ export function getExpectedCropsPerHarvest(
       (crop.yield ?? 1) + (crop.percent_chance_extra ?? 0) / 100.0;
 
     // Make a full copy; no cloning issues!
-    let output = qualityMap(q, x => x);
+    let output = qualityMap(q, (x) => x);
     output.normal += crop_yield - 1;
     return output;
   } else if (crop.special_handling == "tea") {
@@ -227,6 +233,32 @@ export function getExpectedCropsPerHarvest(
   } else {
     throw new Error("Unrecognized special " + crop.special_handling);
   }
+}
+
+export function getRevenueRaw(
+  crop: CropDefinition,
+  quantity: QualityVector<number>,
+  tiller: boolean
+): number {
+  // prices are rounded down!
+  const prices = qualityMap(PRICE_MULTIPLIERS, (multiplier) => {
+    // Note: prices are rounded down after each multiplier, and
+    // quality is applied first.
+    //
+    // Proof: Silver Ancient Fruit is 687, and 755 with Tiller.
+    //   550 * 1.25 = 687.5 -> 687
+    //   687 * 1.1 = 755.7 -> 755
+    // but 550 * 1.25 * 1.1 = 756.25, too high
+    // and trunc(550 * 1.1) * 1.25 is the same
+    let price = Math.trunc(multiplier * crop.sell_price);
+    if (tiller) {
+      price = Math.trunc(price * 1.1);
+    }
+    return price;
+  });
+
+  // So, putting it all together
+  return qualityDot(quantity, prices);
 }
 
 export function calculate(
@@ -245,33 +277,23 @@ export function calculate(
     return "out-of-season";
   }
 
-  // How many crops of each quality do we expect to get?
+  // How many crops of each quality do we expect to get, in total.
   const quality_probabilities = settings.quality_probabilities ?? NO_QUALITY;
   const per_harvest = getExpectedCropsPerHarvest(crop, quality_probabilities);
+  const total_crops = qualityMap(per_harvest, (x) => x * harvests.number);
 
   // How much are those crops worth?
-  // prices are rounded down!
-  const prices = qualityMap(PRICE_MULTIPLIERS, (multiplier) =>
-    Math.trunc(multiplier * crop.sell_price)
-  );
+  const revenue = getRevenueRaw(crop, total_crops, settings.tiller_enabled);
 
   // So, putting it all together
-  const num_crops_per_harvest = qualitySum(per_harvest);
-  let revenue_per_harvest = qualityDot(per_harvest, prices);
-
-  if (settings.tiller_enabled) {
-    revenue_per_harvest *= 1.1; // could maybe do this before to get integer prices
-  }
-
-  // Okay, let's calculate everything!
-  const profit = revenue_per_harvest * harvests.number - crop.seed_cost;
+  const profit = revenue - crop.seed_cost;
   const daily_profit = profit / harvests.duration;
 
   return {
     definition: crop,
     useful_days: harvests.duration,
     num_harvests: harvests.number,
-    num_crops: num_crops_per_harvest * harvests.number,
+    num_crops: qualitySum(total_crops),
     profit,
     daily_profit,
   };
