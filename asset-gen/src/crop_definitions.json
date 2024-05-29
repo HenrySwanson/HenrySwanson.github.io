@@ -11,14 +11,16 @@
     "season": "Spring",
     "seed_cost": 0,
     "sell_price": 35,
-    "days_to_grow": 3
+    "days_to_grow": 3,
+    "type": "vegetable"
   },
   {
     "name": "Cauliflower",
     "season": "Spring",
     "seed_cost": 80,
     "sell_price": 175,
-    "days_to_grow": 12
+    "days_to_grow": 12,
+    "type": "vegetable"
   },
   {
     "name": "Coffee Bean",
@@ -36,7 +38,8 @@
     "season": "Spring",
     "seed_cost": 40,
     "sell_price": 60,
-    "days_to_grow": 4
+    "days_to_grow": 4,
+    "type": "vegetable"
   },
   {
     "name": "Green Bean",
@@ -44,21 +47,24 @@
     "seed_cost": 60,
     "sell_price": 40,
     "days_to_grow": 10,
-    "regrowth_period": 3
+    "regrowth_period": 3,
+    "type": "vegetable"
   },
   {
     "name": "Kale",
     "season": "Spring",
     "seed_cost": 70,
     "sell_price": 110,
-    "days_to_grow": 6
+    "days_to_grow": 6,
+    "type": "vegetable"
   },
   {
     "name": "Parsnip",
     "season": "Spring",
     "seed_cost": 20,
     "sell_price": 35,
-    "days_to_grow": 4
+    "days_to_grow": 4,
+    "type": "vegetable"
   },
   {
     "name": "Potato",
@@ -66,14 +72,16 @@
     "seed_cost": 50,
     "sell_price": 80,
     "days_to_grow": 6,
-    "percent_chance_extra": 25
+    "percent_chance_extra": 25,
+    "type": "vegetable"
   },
   {
     "name": "Rhubarb",
     "season": "Spring",
     "seed_cost": 100,
     "sell_price": 220,
-    "days_to_grow": 13
+    "days_to_grow": 13,
+    "type": "fruit"
   },
   {
     "name": "Strawberry",
@@ -82,7 +90,8 @@
     "sell_price": 120,
     "days_to_grow": 8,
     "regrowth_period": 4,
-    "percent_chance_extra": 2
+    "percent_chance_extra": 2,
+    "type": "fruit"
   },
   {
     "name": "Tulip",
@@ -96,7 +105,8 @@
     "season": "Spring",
     "seed_cost": 40,
     "sell_price": 30,
-    "days_to_grow": 6
+    "days_to_grow": 6,
+    "type": "vegetable"
   },
   {
     "name": "Blueberry",
@@ -106,7 +116,8 @@
     "days_to_grow": 13,
     "regrowth_period": 4,
     "yield": 3,
-    "percent_chance_extra": 2
+    "percent_chance_extra": 2,
+    "type": "fruit"
   },
   {
     "name": "Corn",
@@ -115,7 +126,8 @@
     "seed_cost": 150,
     "sell_price": 50,
     "days_to_grow": 14,
-    "regrowth_period": 4
+    "regrowth_period": 4,
+    "type": "vegetable"
   },
   {
     "name": "Hops",
@@ -123,7 +135,8 @@
     "seed_cost": 60,
     "sell_price": 25,
     "days_to_grow": 11,
-    "regrowth_period": 1
+    "regrowth_period": 1,
+    "type": "vegetable"
   },
   {
     "name": "Hot Pepper",
@@ -132,14 +145,16 @@
     "sell_price": 40,
     "days_to_grow": 5,
     "regrowth_period": 3,
-    "percent_chance_extra": 3
+    "percent_chance_extra": 3,
+    "type": "fruit"
   },
   {
     "name": "Melon",
     "season": "Summer",
     "seed_cost": 80,
     "sell_price": 250,
-    "days_to_grow": 12
+    "days_to_grow": 12,
+    "type": "fruit"
   },
   {
     "name": "Poppy",
@@ -153,21 +168,24 @@
     "season": "Summer",
     "seed_cost": 40,
     "sell_price": 90,
-    "days_to_grow": 6
+    "days_to_grow": 6,
+    "type": "vegetable"
   },
   {
     "name": "Red Cabbage",
     "season": "Summer",
     "seed_cost": 100,
     "sell_price": 260,
-    "days_to_grow": 9
+    "days_to_grow": 9,
+    "type": "vegetable"
   },
   {
     "name": "Starfruit",
     "season": "Summer",
     "seed_cost": 400,
     "sell_price": 750,
-    "days_to_grow": 13
+    "days_to_grow": 13,
+    "type": "fruit"
   },
   {
     "name": "Summer Spangle",
@@ -181,7 +199,8 @@
     "season": "Summer",
     "seed_cost": 0,
     "sell_price": 45,
-    "days_to_grow": 6
+    "days_to_grow": 6,
+    "type": "vegetable"
   },
   {
     "name": "Sunflower",
@@ -198,7 +217,8 @@
     "sell_price": 60,
     "days_to_grow": 11,
     "regrowth_period": 4,
-    "percent_chance_extra": 5
+    "percent_chance_extra": 5,
+    "type": "vegetable"
   },
   {
     "name": "Wheat",
@@ -206,42 +226,48 @@
     "multiseason": 2,
     "seed_cost": 10,
     "sell_price": 25,
-    "days_to_grow": 4
+    "days_to_grow": 4,
+    "type": "vegetable"
   },
   {
     "name": "Amaranth",
     "season": "Fall",
     "seed_cost": 70,
     "sell_price": 150,
-    "days_to_grow": 7
+    "days_to_grow": 7,
+    "type": "vegetable"
   },
   {
     "name": "Artichoke",
     "season": "Fall",
     "seed_cost": 30,
     "sell_price": 160,
-    "days_to_grow": 8
+    "days_to_grow": 8,
+    "type": "vegetable"
   },
   {
     "name": "Beet",
     "season": "Fall",
     "seed_cost": 20,
     "sell_price": 100,
-    "days_to_grow": 6
+    "days_to_grow": 6,
+    "type": "vegetable"
   },
   {
     "name": "Bok Choy",
     "season": "Fall",
     "seed_cost": 50,
     "sell_price": 80,
-    "days_to_grow": 4
+    "days_to_grow": 4,
+    "type": "vegetable"
   },
   {
     "name": "Broccoli",
     "season": "Fall",
     "seed_cost": 0,
     "sell_price": 70,
-    "days_to_grow": 8
+    "days_to_grow": 8,
+    "type": "vegetable"
   },
   {
     "name": "Cranberries",
@@ -251,7 +277,8 @@
     "days_to_grow": 7,
     "regrowth_period": 5,
     "yield": 2,
-    "percent_chance_extra": 10
+    "percent_chance_extra": 10,
+    "type": "fruit"
   },
   {
     "name": "Eggplant",
@@ -260,7 +287,8 @@
     "sell_price": 60,
     "days_to_grow": 5,
     "regrowth_period": 5,
-    "percent_chance_extra": 0.2
+    "percent_chance_extra": 0.2,
+    "type": "vegetable"
   },
   {
     "name": "Fairy Rose",
@@ -275,28 +303,32 @@
     "seed_cost": 60,
     "sell_price": 80,
     "days_to_grow": 10,
-    "regrowth_period": 3
+    "regrowth_period": 3,
+    "type": "fruit"
   },
   {
     "name": "Pumpkin",
     "season": "Fall",
     "seed_cost": 100,
     "sell_price": 320,
-    "days_to_grow": 13
+    "days_to_grow": 13,
+    "type": "vegetable"
   },
   {
     "name": "Yam",
     "season": "Fall",
     "seed_cost": 60,
     "sell_price": 160,
-    "days_to_grow": 10
+    "days_to_grow": 10,
+    "type": "vegetable"
   },
   {
     "name": "Powdermelon",
     "season": "Winter",
     "seed_cost": 0,
     "sell_price": 60,
-    "days_to_grow": 7
+    "days_to_grow": 7,
+    "type": "fruit"
   },
   {
     "name": "Ancient Fruit",
@@ -305,14 +337,16 @@
     "seed_cost": 0,
     "sell_price": 550,
     "days_to_grow": 28,
-    "regrowth_period": 7
+    "regrowth_period": 7,
+    "type": "fruit"
   },
   {
     "name": "Cactus Fruit",
     "seed_cost": 150,
     "sell_price": 75,
     "days_to_grow": 12,
-    "regrowth_period": 3
+    "regrowth_period": 3,
+    "type": "fruit"
   },
   {
     "name": "Pineapple",
@@ -320,14 +354,16 @@
     "seed_cost": 400,
     "sell_price": 300,
     "days_to_grow": 14,
-    "regrowth_period": 7
+    "regrowth_period": 7,
+    "type": "fruit"
   },
   {
     "name": "Taro Root",
     "season": "Summer",
     "seed_cost": 24,
     "sell_price": 100,
-    "days_to_grow": 7
+    "days_to_grow": 7,
+    "type": "vegetable"
   },
   {
     "name": "Sweet Gem Berry",
@@ -344,6 +380,7 @@
     "sell_price": 50,
     "days_to_grow": 20,
     "regrowth_period": 1,
-    "special_handling": "tea"
+    "special_handling": "tea",
+    "type": "vegetable"
   }
 ]

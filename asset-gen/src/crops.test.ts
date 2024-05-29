@@ -8,6 +8,9 @@ import {
   getExpectedCropsPerHarvest,
   NO_QUALITY,
   QualityVector,
+  getRevenueFromPreserveJar,
+  getRevenueFromKeg,
+  getRevenueFromRaw,
 } from "./crops";
 
 function getCrop(name: string): CropDefinition {
@@ -16,12 +19,6 @@ function getCrop(name: string): CropDefinition {
     throw new Error("Crop " + name + " not found!");
   }
   return crop;
-}
-
-function expectIsInSeason(
-  c: CropData | "out-of-season"
-): asserts c is CropData {
-  expect(c).not.toBe("out-of-season");
 }
 
 describe("number of harvests", () => {
@@ -216,5 +213,122 @@ describe("expected crops", () => {
       gold: 0.0,
       iridium: 0.0,
     });
+  });
+});
+
+describe("revenue", () => {
+  test("raw crops", () => {
+    // This is mostly just testing quality multipliers and tiller,
+    // since all crops are treated the same.
+    const strawberry = getCrop("Strawberry");
+    expect(strawberry.sell_price).toBe(120);
+
+    // Check single prices
+    const expected_prices: [keyof QualityVector<number>, boolean, number][] = [
+      ["normal", false, 120],
+      ["silver", false, 150],
+      ["gold", false, 180],
+      ["iridium", false, 240],
+      ["normal", true, 132],
+      ["silver", true, 165],
+      ["gold", true, 198],
+      ["iridium", true, 264],
+    ];
+    for (const [quality_type, tiller, expected_price] of expected_prices) {
+      let quality = { normal: 0, silver: 0, gold: 0, iridium: 0 };
+      quality[quality_type] = 1;
+      expect(getRevenueFromRaw(strawberry, quality, tiller)).toBe(
+        expected_price
+      );
+    }
+
+    // Check scaling
+    expect(
+      getRevenueFromRaw(
+        strawberry,
+        {
+          normal: 5,
+          silver: 0,
+          gold: 0,
+          iridium: 0,
+        },
+        true
+      )
+    ).toBe(132 * 5);
+    expect(
+      getRevenueFromRaw(
+        strawberry,
+        {
+          normal: 1,
+          silver: 2,
+          gold: 3,
+          iridium: 4,
+        },
+        false
+      )
+    ).toBe(120 + 2 * 150 + 3 * 180 + 4 * 240);
+  });
+
+  test("preserves jar", () => {
+    // Fruit
+    const strawberry = getCrop("Strawberry");
+    expect(strawberry.sell_price).toBe(120);
+    expect(getRevenueFromPreserveJar(strawberry, 1, false)).toBe(290);
+    expect(getRevenueFromPreserveJar(strawberry, 10, false)).toBe(2900);
+    expect(getRevenueFromPreserveJar(strawberry, 1, true)).toBe(406);
+
+    // Different fruit
+    const blueberry = getCrop("Blueberry");
+    expect(blueberry.sell_price).toBe(50);
+    expect(getRevenueFromPreserveJar(blueberry, 1, false)).toBe(150);
+
+    // Vegetable
+    const pumpkin = getCrop("Pumpkin");
+    expect(pumpkin.sell_price).toBe(320);
+    expect(getRevenueFromPreserveJar(pumpkin, 1, false)).toBe(690);
+    expect(getRevenueFromPreserveJar(pumpkin, 1, true)).toBe(966);
+
+    // Neither
+    const poppy = getCrop("Poppy");
+    expect(getRevenueFromPreserveJar(poppy, 1, false)).toBeNull();
+  });
+
+  test("keg", () => {
+    // Special ones
+    const wheat = getCrop("Wheat"); // beer
+    expect(getRevenueFromKeg(wheat, 1, false)).toBe(200);
+    expect(getRevenueFromKeg(wheat, 1, true)).toBe(280);
+
+    const rice = getCrop("Unmilled Rice"); // vinegar x2
+    expect(getRevenueFromKeg(rice, 1, false)).toBe(200);
+    expect(getRevenueFromKeg(rice, 1, true)).toBe(200);
+
+    const coffee = getCrop("Coffee Bean"); // coffee
+    expect(getRevenueFromKeg(coffee, 5, false)).toBe(150);
+    expect(getRevenueFromKeg(coffee, 5, true)).toBe(150);
+
+    const tea = getCrop("Tea Leaves"); // tea
+    expect(getRevenueFromKeg(tea, 1, false)).toBe(100);
+    expect(getRevenueFromKeg(tea, 1, true)).toBe(140);
+
+    const hops = getCrop("Hops"); // pale ale
+    expect(getRevenueFromKeg(hops, 1, false)).toBe(300);
+    expect(getRevenueFromKeg(hops, 1, true)).toBe(420);
+
+    // Fruits into Wines
+    const strawberry = getCrop("Strawberry");
+    expect(getRevenueFromKeg(strawberry, 1, false)).toBe(360);
+    expect(getRevenueFromKeg(strawberry, 1, true)).toBe(504);
+    const blueberry = getCrop("Blueberry");
+    expect(getRevenueFromKeg(blueberry, 1, false)).toBe(150);
+    expect(getRevenueFromKeg(blueberry, 1, true)).toBe(210);
+
+    // Vegetables into Juice
+    const pumpkin = getCrop("Pumpkin");
+    expect(getRevenueFromKeg(pumpkin, 1, false)).toBe(720);
+    expect(getRevenueFromKeg(pumpkin, 1, true)).toBe(1008);
+    const carrot = getCrop("Carrot");
+    expect(getRevenueFromKeg(carrot, 1, false)).toBe(78);
+    expect(getRevenueFromKeg(carrot, 1, true)).toBe(109);
   });
 });

@@ -94,6 +94,20 @@ export const PRICE_MULTIPLIERS: QualityVector<number> = {
   iridium: 2.0,
 };
 
+function multiplyPriceByPercentage(
+  base: number,
+  percentage: number,
+  apply: boolean = true
+): number {
+  if (apply) {
+    // We use (e.g.) 40 instead of 0.4 here, because we can lose precision otherwise.
+    // For example, 690 * 1.4 is exactly 966, but JS computes it as 965.99999
+    return Math.trunc((base * percentage) / 100);
+  } else {
+    return base;
+  }
+}
+
 /// Returns the quality ratios for a given farming level
 export function computeQuality(farming_level: number): QualityVector<number> {
   // https://stardewvalleywiki.com/Farming#Complete_Formula_2
@@ -235,12 +249,11 @@ export function getExpectedCropsPerHarvest(
   }
 }
 
-export function getRevenueRaw(
+export function getRevenueFromRaw(
   crop: CropDefinition,
   quantity: QualityVector<number>,
   tiller: boolean
 ): number {
-  // prices are rounded down!
   const prices = qualityMap(PRICE_MULTIPLIERS, (multiplier) => {
     // Note: prices are rounded down after each multiplier, and
     // quality is applied first.
@@ -250,15 +263,86 @@ export function getRevenueRaw(
     //   687 * 1.1 = 755.7 -> 755
     // but 550 * 1.25 * 1.1 = 756.25, too high
     // and trunc(550 * 1.1) * 1.25 is the same
-    let price = Math.trunc(multiplier * crop.sell_price);
-    if (tiller) {
-      price = Math.trunc(price * 1.1);
-    }
-    return price;
+    return multiplyPriceByPercentage(
+      multiplyPriceByPercentage(crop.sell_price, Math.round(100 * multiplier)),
+      110,
+      tiller
+    );
   });
 
-  // So, putting it all together
-  return qualityDot(quantity, prices);
+  return qualityDot(prices, quantity);
+}
+
+export function getRevenueFromPreserveJar(
+  crop: CropDefinition,
+  quantity: number,
+  artisan: boolean
+): number | null {
+  // Only fruits and veggies can be preserved
+  if (crop.type === "fruit" || crop.type === "vegetable") {
+    // Quality makes no difference! Everything is the same price.
+    const base_price = 2 * crop.sell_price + 50;
+    const price = multiplyPriceByPercentage(base_price, 140, artisan);
+    return price * quantity;
+  }
+
+  return null;
+}
+
+function getBasePriceKeggedGood(crop: CropDefinition): number | null {
+  // First deal with some special cases
+  // TODO: more robust than name matching?
+  switch (crop.name) {
+    case "Wheat":
+      return 200; // beer
+    case "Unmilled Rice":
+      // technically this only works if you have milled rice...
+      return 100; // vinegar
+    case "Coffee Bean":
+      return 150; // coffee
+    case "Tea Leaves":
+      return 100; // green tea
+    case "Hops":
+      return 300; // pale ale
+    default:
+    // do nothing
+  }
+
+  switch (crop.type) {
+    case "fruit":
+      return 3 * crop.sell_price;
+    case "vegetable":
+      return multiplyPriceByPercentage(crop.sell_price, 225);
+    default:
+    // do nothing
+  }
+
+  return null;
+}
+
+export function getRevenueFromKeg(
+  crop: CropDefinition,
+  quantity: number,
+  artisan: boolean
+): number | null {
+  const base_price = getBasePriceKeggedGood(crop);
+  if (base_price === null) {
+    return null;
+  }
+
+  // Coffee is a special case: it takes 5 beans and also it's not an
+  // artisan good...
+  if (crop.name === "Coffee Bean") {
+    return (base_price * quantity) / 5;
+  }
+  // Same with vinegar; produces 2 per rice, and isn't artisan good
+  if (crop.name === "Unmilled Rice") {
+    return base_price * quantity * 2;
+  }
+
+  // Everything else is straightforward
+  const price = multiplyPriceByPercentage(base_price, 140, artisan);
+  return price * quantity;
 }
 
 export function calculate(
@@ -283,7 +367,7 @@ export function calculate(
   const total_crops = qualityMap(per_harvest, (x) => x * harvests.number);
 
   // How much are those crops worth?
-  const revenue = getRevenueRaw(crop, total_crops, settings.tiller_enabled);
+  const revenue = getRevenueFromRaw(crop, total_crops, settings.tiller_enabled);
 
   // So, putting it all together
   const profit = revenue - crop.seed_cost;
