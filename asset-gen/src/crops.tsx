@@ -34,7 +34,7 @@ export type CropData = {
   num_harvests: number;
   num_crops: number;
   profit: number;
-  daily_profit: number;
+  daily_profit: number | null;
 };
 
 export type QualityVector<T> = {
@@ -371,7 +371,8 @@ export function calculate(
 
   // So, putting it all together
   const profit = revenue - crop.seed_cost;
-  const daily_profit = profit / harvests.duration;
+  const daily_profit =
+    harvests.duration === 0 ? null : profit / harvests.duration;
 
   return {
     definition: crop,

@@ -21,6 +21,28 @@ function clamp(x: number, min: number, max: number) {
   return Math.max(min, Math.min(max, x));
 }
 
+// Sorts
+function compareNumbers(x: number, y: number): number {
+  return x - y;
+}
+
+function compareNullableNumbers(
+  x: number | null,
+  y: number | null,
+  nullIs: "min" | "max" = "min"
+): number {
+  if (x === null && y === null) {
+    return 0;
+  }
+  if (x === null) {
+    return nullIs === "min" ? -1 : 1;
+  }
+  if (y === null) {
+    return nullIs === "min" ? 1 : -1;
+  }
+  return x - y;
+}
+
 // Defines the set of columns for the whole table.
 type Column = {
   name: string;
@@ -28,136 +50,151 @@ type Column = {
   compare: (a: CropData, b: CropData) => number;
 };
 
-const COLUMNS: Column[] = [
-  {
-    name: "Name",
+function makeColumn<T>(
+  name: string,
+  keyFn: (crop: CropData) => T,
+  cellText: (key: T) => string | JSX.Element,
+  compare: (keyA: T, keyB: T) => number
+): Column {
+  return {
+    name,
     cellText: (crop: CropData) => {
+      const key = keyFn(crop);
+      return cellText(key);
+    },
+    compare: (a: CropData, b: CropData) => {
+      const keyA = keyFn(a);
+      const keyB = keyFn(b);
+      return compare(keyA, keyB);
+    },
+  };
+}
+
+const COLUMNS: Column[] = [
+  makeColumn(
+    "Name",
+    (crop: CropData) => crop.definition.name,
+    (name: string) => {
       // NOTE: replace(string, string) only replaces the first one
-      const img_name = `/img/${crop.definition.name.replace(/ /g, "_")}.png`;
+      const img_name = `/img/${name.replace(/ /g, "_")}.png`;
       return (
         <>
           <img className="inline-icon" src={img_name} />
-          {crop.definition.name}
+          {name}
         </>
       );
     },
-    compare: (a: CropData, b: CropData) =>
-      a.definition.name.localeCompare(b.definition.name),
-  },
-  {
-    name: "Seed Cost",
-    cellText: (crop: CropData) => {
-      return (
-        <>
-          <img className="inline-icon" src="/img/Gold.png" />
-          {crop.definition.seed_cost}g
-        </>
-      );
-    },
-    compare: (a: CropData, b: CropData) =>
-      a.definition.seed_cost - b.definition.seed_cost,
-  },
-  {
-    name: "Sell Price",
-    cellText: (crop: CropData) => {
-      return (
-        <>
-          <img className="inline-icon" src="/img/Gold.png" />
-          {crop.definition.sell_price}g
-        </>
-      );
-    },
-    compare: (a: CropData, b: CropData) =>
-      a.definition.sell_price - b.definition.sell_price,
-  },
-  {
-    name: "Days to Grow",
-    cellText: (crop: CropData) => crop.definition.days_to_grow.toString(),
-    compare: (a: CropData, b: CropData) =>
-      a.definition.days_to_grow - b.definition.days_to_grow,
-  },
-  {
-    name: "Regrowth Period",
-    cellText: (crop: CropData) =>
-      crop.definition.regrowth_period?.toString() ?? "-",
-    compare: (a: CropData, b: CropData) => {
-      if (b.definition.regrowth_period === undefined) {
-        return -1;
-      } else if (a.definition.regrowth_period === undefined) {
-        return 1;
-      }
-      return a.definition.regrowth_period - b.definition.regrowth_period;
-    },
-  },
-  {
-    name: "Yield",
-    cellText: (crop: CropData) => {
-      const yield_num = crop.definition.yield ?? 1;
-      if (crop.definition.percent_chance_extra) {
-        return `${yield_num} + ${crop.definition.percent_chance_extra}%`;
+    (a: string, b: string) => a.localeCompare(b)
+  ),
+  makeColumn(
+    "Growth",
+    (crop: CropData) => crop.definition.days_to_grow,
+    (n: number) => `${n}d`,
+    compareNumbers
+  ),
+  makeColumn(
+    "Regrowth",
+    (crop: CropData) => crop.definition.regrowth_period ?? null,
+    (n: number | null) => (n ? `${n}d` : "-"), //n?.toString() ?? "-",
+    compareNullableNumbers
+  ),
+  makeColumn(
+    "Useful Days",
+    (crop: CropData) => crop.useful_days,
+    (n: number) => n.toString(),
+    compareNumbers
+  ),
+  makeColumn<[number, number]>(
+    "Yield",
+    (crop: CropData) => [
+      crop.definition.yield ?? 1,
+      crop.definition.percent_chance_extra ?? 0,
+    ],
+    ([y, extra]) => {
+      if (extra !== 0) {
+        return `${y} + ${extra}%`;
       } else {
-        return yield_num.toString();
+        return y.toString();
       }
     },
-    compare: (a: CropData, b: CropData) => {
+    ([a_yield, a_extra], [b_yield, b_extra]) => {
       // slight hack -- represent as a + b/100
-      const a_num =
-        (a.definition.yield ?? 1) +
-        (a.definition.percent_chance_extra ?? 0) / 100;
-      const b_num =
-        (b.definition.yield ?? 1) +
-        (b.definition.percent_chance_extra ?? 0) / 100;
-      return a_num - b_num;
-    },
-  },
-  {
-    name: "Useful Days",
-    cellText: (crop: CropData) => crop.useful_days.toString(),
-    compare: (a: CropData, b: CropData) => a.useful_days - b.useful_days,
-  },
-  {
-    name: "Num Harvests",
-    cellText: (crop: CropData) => crop.num_harvests.toString(),
-    compare: (a: CropData, b: CropData) => a.num_crops - b.num_crops,
-  },
-  {
-    name: "Num Crops",
-    cellText: (crop: CropData) => {
-      const num_crops = crop.num_crops;
-      if (Number.isInteger(num_crops)) {
-        return num_crops.toString();
+      return a_yield + a_extra / 100 - (b_yield + b_extra / 100);
+    }
+  ),
+  makeColumn(
+    "Num Harvests",
+    (crop: CropData) => crop.num_harvests,
+    (n: number) => n.toString(),
+    compareNumbers
+  ),
+  makeColumn(
+    "Num Crops",
+    (crop: CropData) => crop.num_crops,
+    (n: number) => {
+      if (Number.isInteger(n)) {
+        return n.toString();
       }
-      return crop.num_crops.toFixed(2);
+      return n.toFixed(2);
     },
-    compare: (a: CropData, b: CropData) => a.num_crops - b.num_crops,
-  },
-  {
-    name: "Profit",
-    cellText: (crop: CropData) => {
+    compareNumbers
+  ),
+  makeColumn(
+    "Seed Cost",
+    (crop: CropData) => crop.definition.seed_cost,
+    (seed_cost: number) => {
+      // NOTE: replace(string, string) only replaces the first one
       return (
         <>
           <img className="inline-icon" src="/img/Gold.png" />
-          {crop.profit.toFixed(2)}g
+          {seed_cost}g
         </>
       );
     },
-    compare: (a: CropData, b: CropData) => a.profit - b.profit,
-  },
-  {
-    name: "Daily Profit",
-    cellText: (crop: CropData) => {
-      if (!Number.isFinite(crop.daily_profit)) {
+    compareNumbers
+  ),
+  makeColumn(
+    "Sell Price",
+    (crop: CropData) => crop.definition.sell_price,
+    (sell_price: number) => {
+      return (
+        <>
+          <img className="inline-icon" src="/img/Gold.png" />
+          {sell_price}g
+        </>
+      );
+    },
+    compareNumbers
+  ),
+  makeColumn(
+    "Profit",
+    (crop: CropData) => crop.profit,
+    (profit: number) => {
+      return (
+        <>
+          <img className="inline-icon" src="/img/Gold.png" />
+          {profit.toFixed(2)}g
+        </>
+      );
+    },
+    compareNumbers
+  ),
+  makeColumn(
+    "Daily Profit",
+    (crop: CropData) => crop.daily_profit,
+    (daily_profit: number | null) => {
+      if (daily_profit === null) {
         return "-";
       }
       return (
         <>
           <img className="inline-icon" src="/img/Gold.png" />
-          {crop.daily_profit.toFixed(2)}g
+          {daily_profit.toFixed(2)}g
         </>
       );
     },
-    compare: (a: CropData, b: CropData) => a.daily_profit - b.daily_profit,
-  },
+    compareNullableNumbers
+  ),
 ];
 
 function CropRow({ crop_data }: { crop_data: CropData }) {
