@@ -28,13 +28,15 @@ export namespace Season {
   }
 }
 
+export type ProcessingType = "raw" | "preserves" | "keg";
+
 export type CropData = {
   definition: CropDefinition;
   useful_days: number;
   num_harvests: number;
   num_crops: number;
+  processing: ProcessingType;
   profit: number;
-  daily_profit: number | null;
 };
 
 export type QualityVector<T> = {
@@ -147,6 +149,9 @@ export type Settings = {
   multiseason_enabled: boolean;
   quality_probabilities: QualityVector<number> | null;
   tiller_enabled: boolean;
+  artisan_enabled: boolean;
+  preserves_enabled: boolean;
+  kegs_enabled: boolean;
 };
 
 type Harvests = {
@@ -364,22 +369,49 @@ export function calculate(
   // How many crops of each quality do we expect to get, in total.
   const quality_probabilities = settings.quality_probabilities ?? NO_QUALITY;
   const per_harvest = getExpectedCropsPerHarvest(crop, quality_probabilities);
-  const total_crops = qualityMap(per_harvest, (x) => x * harvests.number);
+  const total_crops_by_quality = qualityMap(
+    per_harvest,
+    (x) => x * harvests.number
+  );
+  const total_crops = qualitySum(total_crops_by_quality);
 
   // How much are those crops worth?
-  const revenue = getRevenueFromRaw(crop, total_crops, settings.tiller_enabled);
+  const raw_revenue = getRevenueFromRaw(
+    crop,
+    total_crops_by_quality,
+    settings.tiller_enabled
+  );
+  const preserves_revenue = getRevenueFromPreserveJar(
+    crop,
+    total_crops,
+    settings.artisan_enabled
+  );
+  const keg_revenue = getRevenueFromKeg(
+    crop,
+    total_crops,
+    settings.artisan_enabled
+  );
+
+  // Find the best method
+  let best: [ProcessingType, number] = ["raw", raw_revenue];
+  if (
+    settings.preserves_enabled &&
+    preserves_revenue !== null &&
+    preserves_revenue > best[1]
+  ) {
+    best = ["preserves", preserves_revenue];
+  }
+  if (settings.kegs_enabled && keg_revenue !== null && keg_revenue > best[1]) {
+    best = ["keg", keg_revenue];
+  }
 
   // So, putting it all together
-  const profit = revenue - crop.seed_cost;
-  const daily_profit =
-    harvests.duration === 0 ? null : profit / harvests.duration;
-
   return {
     definition: crop,
     useful_days: harvests.duration,
     num_harvests: harvests.number,
-    num_crops: qualitySum(total_crops),
-    profit,
-    daily_profit,
+    num_crops: qualitySum(total_crops_by_quality),
+    processing: best[0],
+    profit: best[1] - crop.seed_cost,
   };
 }

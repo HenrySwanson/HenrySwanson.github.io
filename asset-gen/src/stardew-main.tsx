@@ -8,6 +8,7 @@ import {
   Settings,
   PRICE_MULTIPLIERS,
   qualityDot,
+  ProcessingType,
 } from "./crops";
 
 import { useState } from "react";
@@ -154,6 +155,21 @@ const COLUMNS: Column[] = [
     compareNumbers
   ),
   makeColumn(
+    "Processing",
+    (crop: CropData) => crop.processing,
+    (type: ProcessingType) => {
+      switch (type) {
+        case "raw":
+          return "-";
+        case "preserves":
+          return "Preserves Jar";
+        case "keg":
+          return "Keg";
+      }
+    },
+    (a, b) => a.localeCompare(b)
+  ),
+  makeColumn(
     "Sell Price",
     (crop: CropData) => crop.definition.sell_price,
     (sell_price: number) => {
@@ -181,7 +197,8 @@ const COLUMNS: Column[] = [
   ),
   makeColumn(
     "Daily Profit",
-    (crop: CropData) => crop.daily_profit,
+    (crop: CropData) =>
+      crop.useful_days !== 0 ? crop.profit / crop.useful_days : null,
     (daily_profit: number | null) => {
       if (daily_profit === null) {
         return "-";
@@ -295,6 +312,9 @@ type Inputs = {
   quality_checked: boolean;
   farming_level: number;
   tiller_checked: boolean;
+  artisan_checked: boolean;
+  preserves_enabled: boolean;
+  kegs_enabled: boolean;
 };
 
 function InputPanel({
@@ -382,10 +402,47 @@ function InputPanel({
     />
   );
 
+  const artisan_checkbox = (
+    <input
+      type="checkbox"
+      id="enable-artisan"
+      name="enable-artisan"
+      checked={inputs.artisan_checked}
+      onChange={(e) => {
+        changeInputs({ ...inputs, artisan_checked: e.target.checked });
+      }}
+    />
+  );
+
+  const preserves_checkbox = (
+    <input
+      type="checkbox"
+      id="enable-preserves"
+      name="enable-preserves"
+      checked={inputs.preserves_enabled}
+      onChange={(e) => {
+        changeInputs({ ...inputs, preserves_enabled: e.target.checked });
+      }}
+    />
+  );
+
+  const kegs_checkbox = (
+    <input
+      type="checkbox"
+      id="enable-kegs"
+      name="enable-kegs"
+      checked={inputs.kegs_enabled}
+      onChange={(e) => {
+        changeInputs({ ...inputs, kegs_enabled: e.target.checked });
+      }}
+    />
+  );
+
   // Compute some values for things
   const quality = computeQuality(inputs.farming_level);
   const average_quality_score = qualityDot(quality, PRICE_MULTIPLIERS);
   const tiller_checkbox_enabled = inputs.farming_level >= 5;
+  const artisan_checkbox_enabled = inputs.farming_level >= 10;
 
   // TODO: should this be a <form>?
   return (
@@ -404,21 +461,11 @@ function InputPanel({
             </td>
             <td>{day_input}</td>
           </tr>
-        </tbody>
-      </table>
-      <table>
-        <tbody>
           <tr>
             <td>
               <label htmlFor="enable-multiseason">Multi-season?:</label>
             </td>
             <td>{multiseason_checkbox}</td>
-          </tr>
-          <tr>
-            <td>
-              <label htmlFor="enable-quality">Enable Quality?:</label>
-            </td>
-            <td>{quality_checkbox}</td>
           </tr>
         </tbody>
       </table>
@@ -436,10 +483,22 @@ function InputPanel({
             </td>
             <td>{tiller_checkbox}</td>
           </tr>
+          <tr className={artisan_checkbox_enabled ? undefined : "disabled"}>
+            <td>
+              <label htmlFor="enable-artisan">Artisan Profession?:</label>
+            </td>
+            <td>{artisan_checkbox}</td>
+          </tr>
         </tbody>
       </table>
       <table>
         <tbody>
+          <tr>
+            <td colSpan={3}>
+              <label htmlFor="enable-quality">Enable Quality?:</label>
+            </td>
+            <td>{quality_checkbox}</td>
+          </tr>
           <tr className={inputs.quality_checked ? undefined : "disabled"}>
             <td colSpan={3}>Average Quality Factor:</td>
             <td>{average_quality_score.toFixed(2)}</td>
@@ -464,6 +523,22 @@ function InputPanel({
           </tr>
         </tbody>
       </table>
+      <table>
+        <tbody>
+          <tr>
+            <td>
+              <label htmlFor="enable-preserves">Preserve Jars?:</label>
+            </td>
+            <td>{preserves_checkbox}</td>
+          </tr>
+          <tr>
+            <td>
+              <label htmlFor="enable-kegs">Kegs?:</label>
+            </td>
+            <td>{kegs_checkbox}</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -475,6 +550,9 @@ const DEFAULT_INPUTS: Inputs = {
   quality_checked: false,
   farming_level: 1,
   tiller_checked: false,
+  artisan_checked: false,
+  preserves_enabled: false,
+  kegs_enabled: false,
 };
 
 function Root() {
@@ -505,6 +583,9 @@ function Root() {
     multiseason_enabled: inputs.multiseason_checked,
     quality_probabilities: inputs.quality_checked ? quality : null,
     tiller_enabled: inputs.tiller_checked && inputs.farming_level >= 5,
+    artisan_enabled: inputs.artisan_checked && inputs.farming_level >= 10,
+    preserves_enabled: inputs.preserves_enabled,
+    kegs_enabled: inputs.kegs_enabled,
   };
 
   // Get the rows to draw
