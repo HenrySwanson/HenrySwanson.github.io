@@ -21,8 +21,7 @@ This calculator makes a few assumptions, some of which are atypical:
 - All crops that can be irrigated are (Rice, Taro Root)
 - Giant Crops are not considered
 - All crops are available to purchase (i.e., we don't track the fact that Garlic is not available until Year 2)
-- No oil, just preserves and kegs
-  - This makes Sunflowers unprofitable. I will get around to fixing that.
+- Sunflowers are put into the Seed Maker before being put into the Oil Maker
 {% end %}
 
 {% div_wrapper(class="centeredtext") %}

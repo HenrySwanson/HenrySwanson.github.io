@@ -28,7 +28,7 @@ export namespace Season {
   }
 }
 
-export type ProcessingType = "raw" | "preserves" | "keg";
+export type ProcessingType = "raw" | "preserves" | "keg" | "oil";
 
 export type CropData = {
   definition: CropDefinition;
@@ -154,6 +154,7 @@ export type Settings = {
   artisan_skill_chosen: boolean;
   preserves_jar_enabled: boolean;
   kegs_enabled: boolean;
+  oil_maker_enabled: boolean;
 };
 
 type Harvests = {
@@ -332,7 +333,7 @@ function getBasePriceKeggedGood(crop: CropDefinition): number | null {
     case "Hops":
       return 300; // pale ale
     default:
-    // do nothing
+    // fall through to checking crop type
   }
 
   switch (crop.type) {
@@ -341,10 +342,8 @@ function getBasePriceKeggedGood(crop: CropDefinition): number | null {
     case "vegetable":
       return multiplyPriceByPercentage(crop.sell_price, 225);
     default:
-    // do nothing
+      return null;
   }
-
-  return null;
 }
 
 export function getProceedsFromKeg(
@@ -378,6 +377,37 @@ export function getProceedsFromKeg(
   }
 }
 
+function getOilAmount(crop: CropDefinition): number | null {
+  switch (crop.name) {
+    case "Corn":
+      return 1;
+    case "Sunflower":
+      // Each sunflower harvest gives 1 flower and 0-2 seeds (avg 1).
+      // If the sunflower is put into the seed maker first, then that gives
+      // two more seeds (avg), for a total of 3.
+      return 3;
+    default:
+      return null;
+  }
+}
+
+export function getProceedsFromOilMaker(
+  crop: CropDefinition,
+  quantity: number
+): Proceeds | null {
+  // Either we make oil or we don't, but the amount we make depends on the
+  // crop (because sunflowers have seeds to think about).
+  const oil_amount = getOilAmount(crop);
+  if (oil_amount === null) {
+    return null;
+  }
+
+  return {
+    price: 100, // no artisan bonus!
+    quantity: oil_amount * quantity,
+  };
+}
+
 export function calculate(
   crop: CropDefinition,
   settings: Settings
@@ -409,41 +439,40 @@ export function calculate(
     total_crops_by_quality,
     settings.tiller_skill_chosen
   );
-  let other_options: [ProcessingType, Proceeds, number][] = [];
+  let other_options: [ProcessingType, Proceeds | null][] = [];
   if (settings.preserves_jar_enabled) {
-    const proceeds = getProceedsFromPreservesJar(
-      crop,
-      total_crops,
-      settings.artisan_skill_chosen
-    );
-    if (proceeds !== null) {
-      other_options.push([
-        "preserves",
-        proceeds,
-        proceeds.price * proceeds.quantity,
-      ]);
-    }
+    other_options.push([
+      "preserves",
+      getProceedsFromPreservesJar(
+        crop,
+        total_crops,
+        settings.artisan_skill_chosen
+      ),
+    ]);
   }
   if (settings.kegs_enabled) {
-    const proceeds = getProceedsFromKeg(
-      crop,
-      total_crops,
-      settings.artisan_skill_chosen
-    );
-    if (proceeds !== null) {
-      other_options.push(["keg", proceeds, proceeds.price * proceeds.quantity]);
-    }
+    other_options.push([
+      "keg",
+      getProceedsFromKeg(crop, total_crops, settings.artisan_skill_chosen),
+    ]);
+  }
+  if (settings.oil_maker_enabled) {
+    other_options.push(["oil", getProceedsFromOilMaker(crop, total_crops)]);
   }
 
   // Which one is the best? Start with raw.
-  let best_processing: (typeof other_options)[number] = [
+  let best_processing: [ProcessingType, Proceeds, number] = [
     "raw",
     raw_proceeds,
     raw_proceeds.price * raw_proceeds.quantity,
   ];
-  for (const opt of other_options) {
-    if (opt[2] > best_processing[2]) {
-      best_processing = opt;
+  for (const [type, proceeds] of other_options) {
+    if (proceeds === null) {
+      continue;
+    }
+    const revenue = proceeds.price * proceeds.quantity;
+    if (revenue > best_processing[2]) {
+      best_processing = [type, proceeds, revenue];
     }
   }
 
@@ -452,7 +481,7 @@ export function calculate(
     definition: crop,
     useful_days: harvests.duration,
     num_harvests: harvests.number,
-    num_crops: qualitySum(total_crops_by_quality),
+    num_crops: total_crops,
     processing_type: best_processing[0],
     proceeds: best_processing[1],
     revenue: best_processing[2],

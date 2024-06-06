@@ -167,6 +167,8 @@ const COLUMNS: Column[] = [
           return "Preserves Jar";
         case "keg":
           return "Keg";
+        case "oil":
+          return "Oil Maker";
       }
     },
     (a, b) => a.localeCompare(b)
@@ -325,6 +327,7 @@ type Inputs = {
   artisan_checkbox: boolean;
   preserves_jar_checkbox: boolean;
   kegs_checkbox: boolean;
+  oil_checkbox: boolean;
 };
 
 function InputPanel({
@@ -448,6 +451,18 @@ function InputPanel({
     />
   );
 
+  const oil_checkbox = (
+    <input
+      type="checkbox"
+      id="enable-oil"
+      name="enable-oil"
+      checked={inputs.oil_checkbox}
+      onChange={(e) => {
+        changeInputs({ ...inputs, oil_checkbox: e.target.checked });
+      }}
+    />
+  );
+
   // Compute some values for things
   const quality = computeQuality(inputs.farming_level);
   const average_quality_score = qualityDot(quality, PRICE_MULTIPLIERS);
@@ -547,6 +562,12 @@ function InputPanel({
             </td>
             <td>{kegs_checkbox}</td>
           </tr>
+          <tr>
+            <td>
+              <label htmlFor="enable-oil">Oil Makers?:</label>
+            </td>
+            <td>{oil_checkbox}</td>
+          </tr>
         </tbody>
       </table>
     </div>
@@ -563,6 +584,7 @@ const DEFAULT_INPUTS: Inputs = {
   artisan_checkbox: false,
   preserves_jar_checkbox: false,
   kegs_checkbox: false,
+  oil_checkbox: false,
 };
 
 function Root() {
@@ -596,6 +618,7 @@ function Root() {
     artisan_skill_chosen: inputs.artisan_checkbox && inputs.farming_level >= 10,
     preserves_jar_enabled: inputs.preserves_jar_checkbox,
     kegs_enabled: inputs.kegs_checkbox,
+    oil_maker_enabled: inputs.oil_checkbox,
   };
 
   // Get the rows to draw
