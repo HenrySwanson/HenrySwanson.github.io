@@ -9,6 +9,7 @@ import {
   PRICE_MULTIPLIERS,
   qualityDot,
   ProcessingType,
+  Proceeds,
 } from "./crops";
 
 import { useState } from "react";
@@ -20,6 +21,13 @@ import CROP_DEFINITIONS from "./crop_definitions.json";
 
 function clamp(x: number, min: number, max: number) {
   return Math.max(min, Math.min(max, x));
+}
+
+function toFixedOrInteger(n: number, fractionDigits?: number): string {
+  if (Number.isInteger(n)) {
+    return n.toString();
+  }
+  return n.toFixed(fractionDigits);
 }
 
 // Sorts
@@ -132,12 +140,7 @@ const COLUMNS: Column[] = [
   makeColumn(
     "Num Crops",
     (crop: CropData) => crop.num_crops,
-    (n: number) => {
-      if (Number.isInteger(n)) {
-        return n.toString();
-      }
-      return n.toFixed(2);
-    },
+    (n: number) => toFixedOrInteger(n, 2),
     compareNumbers
   ),
   makeColumn(
@@ -156,7 +159,7 @@ const COLUMNS: Column[] = [
   ),
   makeColumn(
     "Processing",
-    (crop: CropData) => crop.processing,
+    (crop: CropData) => crop.processing_type,
     (type: ProcessingType) => {
       switch (type) {
         case "raw":
@@ -170,13 +173,21 @@ const COLUMNS: Column[] = [
     (a, b) => a.localeCompare(b)
   ),
   makeColumn(
+    "Output",
+    (crop: CropData) => crop.proceeds.quantity,
+    (quantity: number) => {
+      return quantity.toFixed(2);
+    },
+    compareNumbers
+  ),
+  makeColumn(
     "Sell Price",
-    (crop: CropData) => crop.definition.sell_price,
+    (crop: CropData) => crop.proceeds.price,
     (sell_price: number) => {
       return (
         <>
           <img className="inline-icon" src="/img/Gold.png" />
-          {sell_price}g
+          {sell_price.toFixed(2)}g
         </>
       );
     },

@@ -35,7 +35,9 @@ export type CropData = {
   useful_days: number;
   num_harvests: number;
   num_crops: number;
-  processing: ProcessingType;
+  processing_type: ProcessingType;
+  proceeds: Proceeds;
+  revenue: number;
   profit: number;
 };
 
@@ -254,11 +256,16 @@ export function getExpectedCropsPerHarvest(
   }
 }
 
-export function getRevenueFromRaw(
+export type Proceeds = {
+  price: number;
+  quantity: number;
+};
+
+export function getProceedsFromRaw(
   crop: CropDefinition,
   quantity: QualityVector<number>,
   tiller: boolean
-): number {
+): Proceeds {
   const prices = qualityMap(PRICE_MULTIPLIERS, (multiplier) => {
     // Note: prices are rounded down after each multiplier, and
     // quality is applied first.
@@ -275,20 +282,33 @@ export function getRevenueFromRaw(
     );
   });
 
-  return qualityDot(prices, quantity);
+  // Average price is tricky! We can't just average the prices directly,
+  // because there will be a non-uniform quantity distribution.
+  const total_crops = qualitySum(quantity);
+  const total_revenue = qualityDot(prices, quantity);
+  const avg_price =
+    total_crops === 0 ? crop.sell_price : total_revenue / total_crops;
+
+  return {
+    price: avg_price,
+    quantity: total_crops,
+  };
 }
 
-export function getRevenueFromPreserveJar(
+export function getProceedsFromPreservesJar(
   crop: CropDefinition,
   quantity: number,
   artisan: boolean
-): number | null {
+): Proceeds | null {
   // Only fruits and veggies can be preserved
   if (crop.type === "fruit" || crop.type === "vegetable") {
     // Quality makes no difference! Everything is the same price.
     const base_price = 2 * crop.sell_price + 50;
     const price = multiplyPriceByPercentage(base_price, 140, artisan);
-    return price * quantity;
+    return {
+      price,
+      quantity,
+    };
   }
 
   return null;
@@ -325,29 +345,35 @@ function getBasePriceKeggedGood(crop: CropDefinition): number | null {
   return null;
 }
 
-export function getRevenueFromKeg(
+export function getProceedsFromKeg(
   crop: CropDefinition,
   quantity: number,
   artisan: boolean
-): number | null {
+): Proceeds | null {
   const base_price = getBasePriceKeggedGood(crop);
   if (base_price === null) {
     return null;
   }
 
-  // Coffee is a special case: it takes 5 beans and also it's not an
-  // artisan good...
-  if (crop.name === "Coffee Bean") {
-    return (base_price * quantity) / 5;
+  switch (crop.name) {
+    case "Coffee Bean":
+      // Coffee is a special case: it takes 5 beans and also it's not an
+      // artisan good...
+      return {
+        price: base_price,
+        quantity: quantity / 5,
+      };
+    case "Unmilled Rice":
+      // Same with vinegar; produces 2 per rice, and isn't artisan good
+      return {
+        price: base_price,
+        quantity: quantity * 2,
+      };
+    default:
+      // Everything else is straightforward
+      const price = multiplyPriceByPercentage(base_price, 140, artisan);
+      return { price, quantity };
   }
-  // Same with vinegar; produces 2 per rice, and isn't artisan good
-  if (crop.name === "Unmilled Rice") {
-    return base_price * quantity * 2;
-  }
-
-  // Everything else is straightforward
-  const price = multiplyPriceByPercentage(base_price, 140, artisan);
-  return price * quantity;
 }
 
 export function calculate(
@@ -375,34 +401,48 @@ export function calculate(
   );
   const total_crops = qualitySum(total_crops_by_quality);
 
-  // How much are those crops worth?
-  const raw_revenue = getRevenueFromRaw(
+  // Now we have a bunch of crops. What is the most profitable thing to do with them?
+  const raw_proceeds = getProceedsFromRaw(
     crop,
     total_crops_by_quality,
     settings.tiller_enabled
   );
-  const preserves_revenue = getRevenueFromPreserveJar(
-    crop,
-    total_crops,
-    settings.artisan_enabled
-  );
-  const keg_revenue = getRevenueFromKeg(
-    crop,
-    total_crops,
-    settings.artisan_enabled
-  );
-
-  // Find the best method
-  let best: [ProcessingType, number] = ["raw", raw_revenue];
-  if (
-    settings.preserves_enabled &&
-    preserves_revenue !== null &&
-    preserves_revenue > best[1]
-  ) {
-    best = ["preserves", preserves_revenue];
+  let other_options: [ProcessingType, Proceeds, number][] = [];
+  if (settings.preserves_enabled) {
+    const proceeds = getProceedsFromPreservesJar(
+      crop,
+      total_crops,
+      settings.artisan_enabled
+    );
+    if (proceeds !== null) {
+      other_options.push([
+        "preserves",
+        proceeds,
+        proceeds.price * proceeds.quantity,
+      ]);
+    }
   }
-  if (settings.kegs_enabled && keg_revenue !== null && keg_revenue > best[1]) {
-    best = ["keg", keg_revenue];
+  if (settings.kegs_enabled) {
+    const proceeds = getProceedsFromKeg(
+      crop,
+      total_crops,
+      settings.artisan_enabled
+    );
+    if (proceeds !== null) {
+      other_options.push(["keg", proceeds, proceeds.price * proceeds.quantity]);
+    }
+  }
+
+  // Which one is the best? Start with raw.
+  let best_processing: (typeof other_options)[number] = [
+    "raw",
+    raw_proceeds,
+    raw_proceeds.price * raw_proceeds.quantity,
+  ];
+  for (const opt of other_options) {
+    if (opt[2] > best_processing[2]) {
+      best_processing = opt;
+    }
   }
 
   // So, putting it all together
@@ -411,7 +451,9 @@ export function calculate(
     useful_days: harvests.duration,
     num_harvests: harvests.number,
     num_crops: qualitySum(total_crops_by_quality),
-    processing: best[0],
-    profit: best[1] - crop.seed_cost,
+    processing_type: best_processing[0],
+    proceeds: best_processing[1],
+    revenue: best_processing[2],
+    profit: best_processing[2] - crop.seed_cost,
   };
 }

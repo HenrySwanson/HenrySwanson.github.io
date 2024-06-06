@@ -8,9 +8,10 @@ import {
   getExpectedCropsPerHarvest,
   NO_QUALITY,
   QualityVector,
-  getRevenueFromPreserveJar,
-  getRevenueFromKeg,
-  getRevenueFromRaw,
+  getProceedsFromPreservesJar,
+  getProceedsFromKeg,
+  getProceedsFromRaw,
+  Proceeds,
 } from "./crops";
 
 function getCrop(name: string): CropDefinition {
@@ -217,6 +218,15 @@ describe("expected crops", () => {
 });
 
 describe("revenue", () => {
+  function expectProceeds(
+    actual: Proceeds,
+    expected_quantity: number,
+    expected_price: number
+  ) {
+    expect(actual.quantity).toBe(expected_quantity);
+    expect(actual.price).toBe(expected_price);
+  }
+
   test("raw crops", () => {
     // This is mostly just testing quality multipliers and tiller,
     // since all crops are treated the same.
@@ -237,14 +247,16 @@ describe("revenue", () => {
     for (const [quality_type, tiller, expected_price] of expected_prices) {
       let quality = { normal: 0, silver: 0, gold: 0, iridium: 0 };
       quality[quality_type] = 1;
-      expect(getRevenueFromRaw(strawberry, quality, tiller)).toBe(
+      expectProceeds(
+        getProceedsFromRaw(strawberry, quality, tiller),
+        1,
         expected_price
       );
     }
 
     // Check scaling
-    expect(
-      getRevenueFromRaw(
+    expectProceeds(
+      getProceedsFromRaw(
         strawberry,
         {
           normal: 5,
@@ -253,10 +265,12 @@ describe("revenue", () => {
           iridium: 0,
         },
         true
-      )
-    ).toBe(132 * 5);
-    expect(
-      getRevenueFromRaw(
+      ),
+      5,
+      132
+    );
+    expectProceeds(
+      getProceedsFromRaw(
         strawberry,
         {
           normal: 1,
@@ -265,70 +279,76 @@ describe("revenue", () => {
           iridium: 4,
         },
         false
-      )
-    ).toBe(120 + 2 * 150 + 3 * 180 + 4 * 240);
+      ),
+      10,
+      (120 + 2 * 150 + 3 * 180 + 4 * 240) / 10
+    );
   });
 
   test("preserves jar", () => {
     // Fruit
     const strawberry = getCrop("Strawberry");
     expect(strawberry.sell_price).toBe(120);
-    expect(getRevenueFromPreserveJar(strawberry, 1, false)).toBe(290);
-    expect(getRevenueFromPreserveJar(strawberry, 10, false)).toBe(2900);
-    expect(getRevenueFromPreserveJar(strawberry, 1, true)).toBe(406);
+    expectProceeds(getProceedsFromPreservesJar(strawberry, 1, false)!, 1, 290);
+    expectProceeds(
+      getProceedsFromPreservesJar(strawberry, 10, false)!,
+      10,
+      290
+    );
+    expectProceeds(getProceedsFromPreservesJar(strawberry, 1, true)!, 1, 406);
 
     // Different fruit
     const blueberry = getCrop("Blueberry");
     expect(blueberry.sell_price).toBe(50);
-    expect(getRevenueFromPreserveJar(blueberry, 1, false)).toBe(150);
+    expectProceeds(getProceedsFromPreservesJar(blueberry, 1, false)!, 1, 150);
 
     // Vegetable
     const pumpkin = getCrop("Pumpkin");
     expect(pumpkin.sell_price).toBe(320);
-    expect(getRevenueFromPreserveJar(pumpkin, 1, false)).toBe(690);
-    expect(getRevenueFromPreserveJar(pumpkin, 1, true)).toBe(966);
+    expectProceeds(getProceedsFromPreservesJar(pumpkin, 1, false)!, 1, 690);
+    expectProceeds(getProceedsFromPreservesJar(pumpkin, 1, true)!, 1, 966);
 
     // Neither
     const poppy = getCrop("Poppy");
-    expect(getRevenueFromPreserveJar(poppy, 1, false)).toBeNull();
+    expect(getProceedsFromPreservesJar(poppy, 1, false)).toBeNull();
   });
 
   test("keg", () => {
     // Special ones
     const wheat = getCrop("Wheat"); // beer
-    expect(getRevenueFromKeg(wheat, 1, false)).toBe(200);
-    expect(getRevenueFromKeg(wheat, 1, true)).toBe(280);
+    expectProceeds(getProceedsFromKeg(wheat, 1, false)!, 1, 200);
+    expectProceeds(getProceedsFromKeg(wheat, 1, true)!, 1, 280);
 
     const rice = getCrop("Unmilled Rice"); // vinegar x2
-    expect(getRevenueFromKeg(rice, 1, false)).toBe(200);
-    expect(getRevenueFromKeg(rice, 1, true)).toBe(200);
+    expectProceeds(getProceedsFromKeg(rice, 1, false)!, 2, 100);
+    expectProceeds(getProceedsFromKeg(rice, 1, true)!, 2, 100);
 
     const coffee = getCrop("Coffee Bean"); // coffee
-    expect(getRevenueFromKeg(coffee, 5, false)).toBe(150);
-    expect(getRevenueFromKeg(coffee, 5, true)).toBe(150);
+    expectProceeds(getProceedsFromKeg(coffee, 5, false)!, 1, 150);
+    expectProceeds(getProceedsFromKeg(coffee, 5, true)!, 1, 150);
 
     const tea = getCrop("Tea Leaves"); // tea
-    expect(getRevenueFromKeg(tea, 1, false)).toBe(100);
-    expect(getRevenueFromKeg(tea, 1, true)).toBe(140);
+    expectProceeds(getProceedsFromKeg(tea, 1, false)!, 1, 100);
+    expectProceeds(getProceedsFromKeg(tea, 1, true)!, 1, 140);
 
     const hops = getCrop("Hops"); // pale ale
-    expect(getRevenueFromKeg(hops, 1, false)).toBe(300);
-    expect(getRevenueFromKeg(hops, 1, true)).toBe(420);
+    expectProceeds(getProceedsFromKeg(hops, 1, false)!, 1, 300);
+    expectProceeds(getProceedsFromKeg(hops, 1, true)!, 1, 420);
 
     // Fruits into Wines
     const strawberry = getCrop("Strawberry");
-    expect(getRevenueFromKeg(strawberry, 1, false)).toBe(360);
-    expect(getRevenueFromKeg(strawberry, 1, true)).toBe(504);
+    expectProceeds(getProceedsFromKeg(strawberry, 1, false)!, 1, 360);
+    expectProceeds(getProceedsFromKeg(strawberry, 1, true)!, 1, 504);
     const blueberry = getCrop("Blueberry");
-    expect(getRevenueFromKeg(blueberry, 1, false)).toBe(150);
-    expect(getRevenueFromKeg(blueberry, 1, true)).toBe(210);
+    expectProceeds(getProceedsFromKeg(blueberry, 1, false)!, 1, 150);
+    expectProceeds(getProceedsFromKeg(blueberry, 1, true)!, 1, 210);
 
     // Vegetables into Juice
     const pumpkin = getCrop("Pumpkin");
-    expect(getRevenueFromKeg(pumpkin, 1, false)).toBe(720);
-    expect(getRevenueFromKeg(pumpkin, 1, true)).toBe(1008);
+    expectProceeds(getProceedsFromKeg(pumpkin, 1, false)!, 1, 720);
+    expectProceeds(getProceedsFromKeg(pumpkin, 1, true)!, 1, 1008);
     const carrot = getCrop("Carrot");
-    expect(getRevenueFromKeg(carrot, 1, false)).toBe(78);
-    expect(getRevenueFromKeg(carrot, 1, true)).toBe(109);
+    expectProceeds(getProceedsFromKeg(carrot, 1, false)!, 1, 78);
+    expectProceeds(getProceedsFromKeg(carrot, 1, true)!, 1, 109);
   });
 });
