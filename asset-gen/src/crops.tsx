@@ -150,9 +150,9 @@ export type Settings = {
   start_day: number;
   multiseason_enabled: boolean;
   quality_probabilities: QualityVector<number> | null;
-  tiller_enabled: boolean;
-  artisan_enabled: boolean;
-  preserves_enabled: boolean;
+  tiller_skill_chosen: boolean;
+  artisan_skill_chosen: boolean;
+  preserves_jar_enabled: boolean;
   kegs_enabled: boolean;
 };
 
@@ -407,14 +407,14 @@ export function calculate(
   const raw_proceeds = getProceedsFromRaw(
     crop,
     total_crops_by_quality,
-    settings.tiller_enabled
+    settings.tiller_skill_chosen
   );
   let other_options: [ProcessingType, Proceeds, number][] = [];
-  if (settings.preserves_enabled) {
+  if (settings.preserves_jar_enabled) {
     const proceeds = getProceedsFromPreservesJar(
       crop,
       total_crops,
-      settings.artisan_enabled
+      settings.artisan_skill_chosen
     );
     if (proceeds !== null) {
       other_options.push([
@@ -428,7 +428,7 @@ export function calculate(
     const proceeds = getProceedsFromKeg(
       crop,
       total_crops,
-      settings.artisan_enabled
+      settings.artisan_skill_chosen
     );
     if (proceeds !== null) {
       other_options.push(["keg", proceeds, proceeds.price * proceeds.quantity]);

@@ -9,7 +9,6 @@ import {
   PRICE_MULTIPLIERS,
   qualityDot,
   ProcessingType,
-  Proceeds,
 } from "./crops";
 
 import { useState } from "react";
@@ -320,12 +319,12 @@ type Inputs = {
   season: Season;
   start_day: number;
   multiseason_checked: boolean;
-  quality_checked: boolean;
+  quality_checkbox: boolean;
   farming_level: number;
-  tiller_checked: boolean;
-  artisan_checked: boolean;
-  preserves_enabled: boolean;
-  kegs_enabled: boolean;
+  tiller_checkbox: boolean;
+  artisan_checkbox: boolean;
+  preserves_jar_checkbox: boolean;
+  kegs_checkbox: boolean;
 };
 
 function InputPanel({
@@ -380,9 +379,9 @@ function InputPanel({
       type="checkbox"
       id="enable-quality"
       name="enable-quality"
-      checked={inputs.quality_checked}
+      checked={inputs.quality_checkbox}
       onChange={(e) => {
-        changeInputs({ ...inputs, quality_checked: e.target.checked });
+        changeInputs({ ...inputs, quality_checkbox: e.target.checked });
       }}
     />
   );
@@ -406,9 +405,9 @@ function InputPanel({
       type="checkbox"
       id="enable-tiller"
       name="enable-tiller"
-      checked={inputs.tiller_checked}
+      checked={inputs.tiller_checkbox}
       onChange={(e) => {
-        changeInputs({ ...inputs, tiller_checked: e.target.checked });
+        changeInputs({ ...inputs, tiller_checkbox: e.target.checked });
       }}
     />
   );
@@ -418,9 +417,9 @@ function InputPanel({
       type="checkbox"
       id="enable-artisan"
       name="enable-artisan"
-      checked={inputs.artisan_checked}
+      checked={inputs.artisan_checkbox}
       onChange={(e) => {
-        changeInputs({ ...inputs, artisan_checked: e.target.checked });
+        changeInputs({ ...inputs, artisan_checkbox: e.target.checked });
       }}
     />
   );
@@ -430,9 +429,9 @@ function InputPanel({
       type="checkbox"
       id="enable-preserves"
       name="enable-preserves"
-      checked={inputs.preserves_enabled}
+      checked={inputs.preserves_jar_checkbox}
       onChange={(e) => {
-        changeInputs({ ...inputs, preserves_enabled: e.target.checked });
+        changeInputs({ ...inputs, preserves_jar_checkbox: e.target.checked });
       }}
     />
   );
@@ -442,9 +441,9 @@ function InputPanel({
       type="checkbox"
       id="enable-kegs"
       name="enable-kegs"
-      checked={inputs.kegs_enabled}
+      checked={inputs.kegs_checkbox}
       onChange={(e) => {
-        changeInputs({ ...inputs, kegs_enabled: e.target.checked });
+        changeInputs({ ...inputs, kegs_checkbox: e.target.checked });
       }}
     />
   );
@@ -510,11 +509,11 @@ function InputPanel({
             </td>
             <td>{quality_checkbox}</td>
           </tr>
-          <tr className={inputs.quality_checked ? undefined : "disabled"}>
+          <tr className={inputs.quality_checkbox ? undefined : "disabled"}>
             <td colSpan={3}>Average Quality Factor:</td>
             <td>{average_quality_score.toFixed(2)}</td>
           </tr>
-          <tr className={inputs.quality_checked ? undefined : "disabled"}>
+          <tr className={inputs.quality_checkbox ? undefined : "disabled"}>
             <td>
               <img className="inline-icon" src="/img/Base_Quality.png" />
               {(100 * quality.normal).toFixed(0)}%
@@ -558,12 +557,12 @@ const DEFAULT_INPUTS: Inputs = {
   season: Season.SPRING,
   start_day: 1,
   multiseason_checked: false,
-  quality_checked: false,
+  quality_checkbox: false,
   farming_level: 1,
-  tiller_checked: false,
-  artisan_checked: false,
-  preserves_enabled: false,
-  kegs_enabled: false,
+  tiller_checkbox: false,
+  artisan_checkbox: false,
+  preserves_jar_checkbox: false,
+  kegs_checkbox: false,
 };
 
 function Root() {
@@ -592,11 +591,11 @@ function Root() {
     season: inputs.season,
     start_day: inputs.start_day,
     multiseason_enabled: inputs.multiseason_checked,
-    quality_probabilities: inputs.quality_checked ? quality : null,
-    tiller_enabled: inputs.tiller_checked && inputs.farming_level >= 5,
-    artisan_enabled: inputs.artisan_checked && inputs.farming_level >= 10,
-    preserves_enabled: inputs.preserves_enabled,
-    kegs_enabled: inputs.kegs_enabled,
+    quality_probabilities: inputs.quality_checkbox ? quality : null,
+    tiller_skill_chosen: inputs.tiller_checkbox && inputs.farming_level >= 5,
+    artisan_skill_chosen: inputs.artisan_checkbox && inputs.farming_level >= 10,
+    preserves_jar_enabled: inputs.preserves_jar_checkbox,
+    kegs_enabled: inputs.kegs_checkbox,
   };
 
   // Get the rows to draw
