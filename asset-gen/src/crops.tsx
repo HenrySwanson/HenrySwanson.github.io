@@ -266,6 +266,8 @@ export function getProceedsFromRaw(
   quantity: QualityVector<number>,
   tiller: boolean
 ): Proceeds {
+  const tiller_applicable =
+    crop.type == "fruit" || crop.type == "vegetable" || crop.type == "flower";
   const prices = qualityMap(PRICE_MULTIPLIERS, (multiplier) => {
     // Note: prices are rounded down after each multiplier, and
     // quality is applied first.
@@ -278,7 +280,7 @@ export function getProceedsFromRaw(
     return multiplyPriceByPercentage(
       multiplyPriceByPercentage(crop.sell_price, Math.round(100 * multiplier)),
       110,
-      tiller
+      tiller && tiller_applicable
     );
   });
 

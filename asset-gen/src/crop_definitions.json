@@ -4,7 +4,8 @@
     "season": "Spring",
     "seed_cost": 30,
     "sell_price": 50,
-    "days_to_grow": 7
+    "days_to_grow": 7,
+    "type": "flower"
   },
   {
     "name": "Carrot",
@@ -31,7 +32,8 @@
     "days_to_grow": 10,
     "regrowth_period": 2,
     "yield": 4,
-    "percent_chance_extra": 2
+    "percent_chance_extra": 2,
+    "type": "special"
   },
   {
     "name": "Garlic",
@@ -98,7 +100,8 @@
     "season": "Spring",
     "seed_cost": 20,
     "sell_price": 30,
-    "days_to_grow": 6
+    "days_to_grow": 6,
+    "type": "flower"
   },
   {
     "name": "Unmilled Rice",
@@ -161,7 +164,8 @@
     "season": "Summer",
     "seed_cost": 100,
     "sell_price": 140,
-    "days_to_grow": 7
+    "days_to_grow": 7,
+    "type": "flower"
   },
   {
     "name": "Radish",
@@ -192,7 +196,8 @@
     "season": "Summer",
     "seed_cost": 50,
     "sell_price": 90,
-    "days_to_grow": 8
+    "days_to_grow": 8,
+    "type": "flower"
   },
   {
     "name": "Summer Squash",
@@ -208,7 +213,8 @@
     "multiseason": 2,
     "seed_cost": 200,
     "sell_price": 80,
-    "days_to_grow": 8
+    "days_to_grow": 8,
+    "type": "flower"
   },
   {
     "name": "Tomato",
@@ -295,7 +301,8 @@
     "season": "Fall",
     "seed_cost": 200,
     "sell_price": 290,
-    "days_to_grow": 12
+    "days_to_grow": 12,
+    "type": "flower"
   },
   {
     "name": "Grape",
@@ -370,7 +377,8 @@
     "season": "Fall",
     "seed_cost": 1000,
     "sell_price": 3000,
-    "days_to_grow": 24
+    "days_to_grow": 24,
+    "type": "special"
   },
   {
     "name": "Tea Leaves",
