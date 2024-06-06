@@ -35,6 +35,7 @@ export type CropData = {
   useful_days: number;
   num_harvests: number;
   num_crops: number;
+  crop_proceeds: QualityVector<Proceeds>;
   processing_type: ProcessingType;
   proceeds: Proceeds;
   revenue: number;
@@ -262,14 +263,13 @@ export type Proceeds = {
   quantity: number;
 };
 
-export function getProceedsFromRaw(
+export function getCropPrices(
   crop: CropDefinition,
-  quantity: QualityVector<number>,
   tiller: boolean
-): Proceeds {
+): QualityVector<number> {
   const tiller_applicable =
     crop.type == "fruit" || crop.type == "vegetable" || crop.type == "flower";
-  const prices = qualityMap(PRICE_MULTIPLIERS, (multiplier) => {
+  return qualityMap(PRICE_MULTIPLIERS, (multiplier) => {
     // Note: prices are rounded down after each multiplier, and
     // quality is applied first.
     //
@@ -284,6 +284,25 @@ export function getProceedsFromRaw(
       tiller && tiller_applicable
     );
   });
+}
+
+function getVectorProceedsFromRaw(
+  crop: CropDefinition,
+  quantity: QualityVector<number>,
+  tiller: boolean
+): QualityVector<Proceeds> {
+  const prices = getCropPrices(crop, tiller);
+  return qualityZip(prices, quantity, (price, quantity) => {
+    return { price, quantity };
+  });
+}
+
+export function getProceedsFromRaw(
+  crop: CropDefinition,
+  quantity: QualityVector<number>,
+  tiller: boolean
+): Proceeds {
+  const prices = getCropPrices(crop, tiller);
 
   // Average price is tricky! We can't just average the prices directly,
   // because there will be a non-uniform quantity distribution.
@@ -482,6 +501,11 @@ export function calculate(
     useful_days: harvests.duration,
     num_harvests: harvests.number,
     num_crops: total_crops,
+    crop_proceeds: getVectorProceedsFromRaw(
+      crop,
+      total_crops_by_quality,
+      settings.tiller_skill_chosen
+    ),
     processing_type: best_processing[0],
     proceeds: best_processing[1],
     revenue: best_processing[2],

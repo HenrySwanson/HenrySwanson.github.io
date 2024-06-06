@@ -9,6 +9,8 @@ import {
   PRICE_MULTIPLIERS,
   qualityDot,
   ProcessingType,
+  QualityVector,
+  CropDefinition,
 } from "./crops";
 
 import { useState } from "react";
@@ -20,6 +22,11 @@ import CROP_DEFINITIONS from "./crop_definitions.json";
 
 function clamp(x: number, min: number, max: number) {
   return Math.max(min, Math.min(max, x));
+}
+
+function getCropImage(name: string): string {
+  // NOTE: replace(string, string) only replaces the first one
+  return `/img/${name.replace(/ /g, "_")}.png`;
 }
 
 function toFixedOrInteger(n: number, fractionDigits?: number): string {
@@ -50,6 +57,20 @@ function compareNullableNumbers(
   }
   return x - y;
 }
+
+const QUALITIES: (keyof QualityVector<never>)[] = [
+  "normal",
+  "silver",
+  "gold",
+  "iridium",
+];
+
+const QUALITY_STAR_IMG_PATHS: QualityVector<string> = {
+  normal: "/img/Base_Quality.png",
+  silver: "/img/Silver_Quality.png",
+  gold: "/img/Gold_Quality.png",
+  iridium: "/img/Iridium_Quality.png",
+};
 
 // Defines the set of columns for the whole table.
 type Column = {
@@ -83,58 +104,14 @@ const COLUMNS: Column[] = [
     "Name",
     (crop: CropData) => crop.definition.name,
     (name: string) => {
-      // NOTE: replace(string, string) only replaces the first one
-      const img_name = `/img/${name.replace(/ /g, "_")}.png`;
       return (
         <>
-          <img className="inline-icon" src={img_name} />
+          <img className="inline-icon" src={getCropImage(name)} />
           {name}
         </>
       );
     },
     (a: string, b: string) => a.localeCompare(b)
-  ),
-  makeColumn(
-    "Growth",
-    (crop: CropData) => crop.definition.days_to_grow,
-    (n: number) => `${n}d`,
-    compareNumbers
-  ),
-  makeColumn(
-    "Regrowth",
-    (crop: CropData) => crop.definition.regrowth_period ?? null,
-    (n: number | null) => (n ? `${n}d` : "-"), //n?.toString() ?? "-",
-    compareNullableNumbers
-  ),
-  makeColumn(
-    "Useful Days",
-    (crop: CropData) => crop.useful_days,
-    (n: number) => n.toString(),
-    compareNumbers
-  ),
-  makeColumn<[number, number]>(
-    "Yield",
-    (crop: CropData) => [
-      crop.definition.yield ?? 1,
-      crop.definition.percent_chance_extra ?? 0,
-    ],
-    ([y, extra]) => {
-      if (extra !== 0) {
-        return `${y} + ${extra}%`;
-      } else {
-        return y.toString();
-      }
-    },
-    ([a_yield, a_extra], [b_yield, b_extra]) => {
-      // slight hack -- represent as a + b/100
-      return a_yield + a_extra / 100 - (b_yield + b_extra / 100);
-    }
-  ),
-  makeColumn(
-    "Num Harvests",
-    (crop: CropData) => crop.num_harvests,
-    (n: number) => n.toString(),
-    compareNumbers
   ),
   makeColumn(
     "Num Crops",
@@ -143,17 +120,9 @@ const COLUMNS: Column[] = [
     compareNumbers
   ),
   makeColumn(
-    "Seed Cost",
-    (crop: CropData) => crop.definition.seed_cost,
-    (seed_cost: number) => {
-      // NOTE: replace(string, string) only replaces the first one
-      return (
-        <>
-          <img className="inline-icon" src="/img/Gold.png" />
-          {seed_cost}g
-        </>
-      );
-    },
+    "Duration",
+    (crop: CropData) => crop.useful_days,
+    (n: number) => `${n}d`,
     compareNumbers
   ),
   makeColumn(
@@ -174,7 +143,7 @@ const COLUMNS: Column[] = [
     (a, b) => a.localeCompare(b)
   ),
   makeColumn(
-    "Output",
+    "Num Produced",
     (crop: CropData) => crop.proceeds.quantity,
     (quantity: number) => {
       return quantity.toFixed(2);
@@ -182,13 +151,13 @@ const COLUMNS: Column[] = [
     compareNumbers
   ),
   makeColumn(
-    "Sell Price",
-    (crop: CropData) => crop.proceeds.price,
-    (sell_price: number) => {
+    "Revenue",
+    (crop: CropData) => crop.revenue,
+    (revenue: number) => {
       return (
         <>
           <img className="inline-icon" src="/img/Gold.png" />
-          {sell_price.toFixed(2)}g
+          {revenue.toFixed(2)}g
         </>
       );
     },
@@ -226,7 +195,13 @@ const COLUMNS: Column[] = [
   ),
 ];
 
-function CropRow({ crop_data }: { crop_data: CropData }) {
+function CropRow({
+  crop_data,
+  on_click,
+}: {
+  crop_data: CropData;
+  on_click: (crop_data: CropData) => void;
+}) {
   let cells = [];
   for (const col of COLUMNS) {
     const value = col.cellText(crop_data);
@@ -235,7 +210,10 @@ function CropRow({ crop_data }: { crop_data: CropData }) {
 
   // Disable a row if it can't be harvested this season
   return (
-    <tr className={crop_data.num_harvests > 0 ? undefined : "disabled"}>
+    <tr
+      className={crop_data.num_harvests > 0 ? undefined : "disabled"}
+      onClick={() => on_click(crop_data)}
+    >
       {cells}
     </tr>
   );
@@ -251,7 +229,13 @@ function flipDirection(x: SortDirection): SortDirection {
   }
 }
 
-function CropTable({ crop_data }: { crop_data: CropData[] }) {
+function CropTable({
+  crop_data,
+  on_row_click,
+}: {
+  crop_data: CropData[];
+  on_row_click: (crop_data: CropData) => void;
+}) {
   const [currentSort, setCurrentSort] = useState<
     [number, SortDirection] | null
   >(null);
@@ -302,7 +286,13 @@ function CropTable({ crop_data }: { crop_data: CropData[] }) {
   // Create the rows
   let rows = [];
   for (const data of sortCropData()) {
-    rows.push(<CropRow key={data.definition.name} crop_data={data}></CropRow>);
+    rows.push(
+      <CropRow
+        key={data.definition.name}
+        crop_data={data}
+        on_click={on_row_click}
+      ></CropRow>
+    );
   }
 
   return (
@@ -529,22 +519,16 @@ function InputPanel({
             <td>{average_quality_score.toFixed(2)}</td>
           </tr>
           <tr className={inputs.quality_checkbox ? undefined : "disabled"}>
-            <td>
-              <img className="inline-icon" src="/img/Base_Quality.png" />
-              {(100 * quality.normal).toFixed(0)}%
-            </td>
-            <td>
-              <img className="inline-icon" src="/img/Silver_Quality.png" />
-              {(100 * quality.silver).toFixed(0)}%
-            </td>
-            <td>
-              <img className="inline-icon" src="/img/Gold_Quality.png" />
-              {(100 * quality.gold).toFixed(0)}%
-            </td>
-            <td>
-              <img className="inline-icon" src="/img/Iridium_Quality.png" />
-              {(100 * quality.iridium).toFixed(0)}%
-            </td>
+            {QUALITIES.map((q) => {
+              const pct = quality[q] * 100;
+              const img_path = QUALITY_STAR_IMG_PATHS[q];
+              return (
+                <td key={q}>
+                  <img className="inline-icon" src={img_path} />
+                  {pct.toFixed(0)}%
+                </td>
+              );
+            })}
           </tr>
         </tbody>
       </table>
@@ -587,8 +571,84 @@ const DEFAULT_INPUTS: Inputs = {
   oil_checkbox: false,
 };
 
+function CropInfo({ crop_data }: { crop_data: CropData }) {
+  const def = crop_data.definition;
+  const y = def.yield ?? 1;
+
+  let rows: [string | JSX.Element, string | number | JSX.Element][] = [
+    ["Growth", `${def.days_to_grow}d`],
+    ["Regrowth", def.regrowth_period ? `${def.regrowth_period}d` : "-"],
+    [
+      "Yield",
+      def.percent_chance_extra ? `${y} + ${def.percent_chance_extra}%` : y,
+    ],
+    ["Harvests", crop_data.num_harvests],
+    [
+      "Seed Cost",
+      <>
+        <img className="inline-icon" src="/img/Gold.png" />
+        {def.seed_cost}g
+      </>,
+    ],
+    [
+      "Final Product",
+      // TODO: make it emit a nicer name
+      crop_data.processing_type,
+    ],
+    // next is sell price
+  ];
+
+  if (crop_data.processing_type === "raw") {
+    for (const q of QUALITIES) {
+      const price = crop_data.crop_proceeds[q].price;
+      const img_path = QUALITY_STAR_IMG_PATHS[q];
+      rows.push([
+        <>
+          Sell Price (<img className="inline-icon" src={img_path} />)
+        </>,
+        <>
+          <img className="inline-icon" src="/img/Gold.png" />
+          {price}g
+        </>,
+      ]);
+    }
+  } else {
+    rows.push([
+      "Sell Price",
+      <>
+        <img className="inline-icon" src="/img/Gold.png" />
+        {crop_data.proceeds.price}g
+      </>,
+    ]);
+  }
+
+  return (
+    <div className="rounded-box">
+      <table>
+        <thead>
+          <tr>
+            <th colSpan={2}>
+              <img className="inline-icon" src={getCropImage(def.name)} />
+              {def.name}
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(([name, prop]) => (
+            <tr>
+              <td>{name}</td>
+              <td>{prop}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function Root() {
   const [inputs, setInputs] = useState<Inputs>(DEFAULT_INPUTS);
+  const [cropSelected, setCropSelected] = useState<CropData | null>(null);
 
   function updateInputs(i: Inputs) {
     // Do some quick massaging of the input data.
@@ -636,10 +696,26 @@ function Root() {
   // Change style of whole document
   document.documentElement.className = Season[inputs.season].toLowerCase();
 
+  // Handler for the box on the RHS
+  function updateInfoBox(crop_data: CropData) {
+    setCropSelected(crop_data);
+    console.log("aaa");
+  }
+
   return (
     <>
-      <InputPanel inputs={inputs} changeInputs={updateInputs}></InputPanel>
-      <CropTable crop_data={crop_data}></CropTable>
+      <div className="auto-center">
+        <InputPanel inputs={inputs} changeInputs={updateInputs}></InputPanel>
+      </div>
+      <div id="crop-table-wrapper">
+        <CropTable
+          crop_data={crop_data}
+          on_row_click={updateInfoBox}
+        ></CropTable>
+        {cropSelected !== null && (
+          <CropInfo crop_data={cropSelected}></CropInfo>
+        )}
+      </div>
     </>
   );
 }

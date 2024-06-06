@@ -36,8 +36,12 @@ h1 {
   text-align: center;
 }
 
-.rounded-box {
+.auto-center {
   margin: 0 auto;
+  max-width: fit-content;
+}
+
+.rounded-box {
   width: fit-content;
   padding: 10px;
   border-radius: 15px;
@@ -122,4 +126,17 @@ table.sortable thead th[aria-sort="ascending"]::after {
 .centeredtext {
   margin: 0 auto;
   width: fit-content;
+}
+
+// Specific items on page
+#input-panel-wrapper {
+  display: flex;
+  justify-content: center;
+}
+
+#crop-table-wrapper {
+  display: flex;
+  align-items: flex-start; // don't stretch items
+  justify-content: center;
+  column-gap: 10px;
 }
