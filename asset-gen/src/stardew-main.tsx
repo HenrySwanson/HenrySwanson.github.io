@@ -602,11 +602,11 @@ function CropInfo({ crop_data }: { crop_data: CropData }) {
       def.percent_chance_extra ? `${y} + ${def.percent_chance_extra}%` : y,
     ],
     ["Harvests", crop_data.num_harvests],
-    ["Seed Cost", <GoldTag amount={def.seed_cost} />],
+    ["Seed Cost", <GoldTag amount={def.seed_cost} fractionalDigits={0} />],
     ["Final Product", <GoodTag name={crop_data.proceeds.name} />],
-    // next is sell price
   ];
 
+  // next is sell price
   if (crop_data.processing_type === "raw") {
     for (const q of QUALITIES) {
       const price = crop_data.crop_proceeds[q].price;
@@ -615,11 +615,14 @@ function CropInfo({ crop_data }: { crop_data: CropData }) {
         <>
           Sell Price (<InlineIcon src={icon} />)
         </>,
-        <GoldTag amount={price} />,
+        <GoldTag amount={price} fractionalDigits={0} />,
       ]);
     }
   } else {
-    rows.push(["Sell Price", <GoldTag amount={crop_data.proceeds.price} />]);
+    rows.push([
+      "Sell Price",
+      <GoldTag amount={crop_data.proceeds.price} fractionalDigits={0} />,
+    ]);
   }
 
   return (
