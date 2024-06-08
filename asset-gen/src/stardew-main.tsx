@@ -217,7 +217,7 @@ function CropRow({
   on_click,
 }: {
   crop_data: CropData;
-  on_click: (crop_data: CropData) => void;
+  on_click: (crop_name: string) => void;
 }) {
   let cells = [];
   for (const col of COLUMNS) {
@@ -229,7 +229,7 @@ function CropRow({
   return (
     <tr
       className={enableIf(crop_data.num_harvests > 0)}
-      onClick={() => on_click(crop_data)}
+      onClick={() => on_click(crop_data.definition.name)}
     >
       {cells}
     </tr>
@@ -251,7 +251,7 @@ function CropTable({
   on_row_click,
 }: {
   crop_data: CropData[];
-  on_row_click: (crop_data: CropData) => void;
+  on_row_click: (crop_name: string) => void;
 }) {
   const [currentSort, setCurrentSort] = useState<
     [number, SortDirection] | null
@@ -647,7 +647,7 @@ function CropInfo({ crop_data }: { crop_data: CropData }) {
 
 function Root() {
   const [inputs, setInputs] = useState<Inputs>(DEFAULT_INPUTS);
-  const [cropSelected, setCropSelected] = useState<CropData | null>(null);
+  const [cropSelected, setCropSelected] = useState<string | null>(null);
 
   function updateInputs(i: Inputs) {
     // Do some quick massaging of the input data.
@@ -680,8 +680,7 @@ function Root() {
     oil_maker_enabled: inputs.oil_checkbox,
   };
 
-  // Get the rows to draw
-  // Discard the old rows and create new ones
+  // Go through all the crops and generate some rows to draw
   let crop_data = [];
   for (const def of CROP_DEFINITIONS) {
     // Filter to crops that are in-season
@@ -692,12 +691,17 @@ function Root() {
     crop_data.push(data);
   }
 
+  // Grab the data for the currently-selected row, if any.
+  const sidetable_data = crop_data.find(
+    (x) => x.definition.name === cropSelected
+  );
+
   // Change style of whole document
   document.documentElement.className = Season[inputs.season].toLowerCase();
 
   // Handler for the box on the RHS
-  function updateInfoBox(crop_data: CropData) {
-    setCropSelected(crop_data);
+  function updateInfoBox(crop_name: string) {
+    setCropSelected(crop_name);
   }
 
   return (
@@ -710,8 +714,8 @@ function Root() {
           crop_data={crop_data}
           on_row_click={updateInfoBox}
         ></CropTable>
-        {cropSelected !== null && (
-          <CropInfo crop_data={cropSelected}></CropInfo>
+        {sidetable_data !== undefined && (
+          <CropInfo crop_data={sidetable_data}></CropInfo>
         )}
       </div>
     </>
