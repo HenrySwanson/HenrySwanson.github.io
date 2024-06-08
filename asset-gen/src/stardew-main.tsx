@@ -92,6 +92,10 @@ function GoldTag({
   return <IconTag src="Gold.png">{amount.toFixed(fractionalDigits)}g</IconTag>;
 }
 
+function TimeTag({ days }: { days: number }) {
+  return <IconTag src="Time.png">{days.toString()}d</IconTag>;
+}
+
 function enableIf(enabled: boolean) {
   return enabled ? undefined : "disabled";
 }
@@ -146,7 +150,7 @@ const COLUMNS: Column[] = [
   makeColumn(
     "Duration",
     (crop: CropData) => crop.useful_days,
-    (n: number) => `${n}d`,
+    (n: number) => <TimeTag days={n} />,
     compareNumbers
   ),
   makeColumn(
@@ -584,8 +588,11 @@ function CropInfo({ crop_data }: { crop_data: CropData }) {
   const y = def.yield ?? 1;
 
   let rows: [string | JSX.Element, string | number | JSX.Element][] = [
-    ["Growth", `${def.days_to_grow}d`],
-    ["Regrowth", def.regrowth_period ? `${def.regrowth_period}d` : "-"],
+    ["Growth", <TimeTag days={def.days_to_grow} />],
+    [
+      "Regrowth",
+      def.regrowth_period ? <TimeTag days={def.regrowth_period} /> : "-",
+    ],
     [
       "Yield",
       def.percent_chance_extra ? `${y} + ${def.percent_chance_extra}%` : y,
