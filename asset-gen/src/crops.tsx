@@ -259,6 +259,7 @@ export function getExpectedCropsPerHarvest(
 }
 
 export type Proceeds = {
+  name: string;
   price: number;
   quantity: number;
 };
@@ -293,7 +294,7 @@ function getVectorProceedsFromRaw(
 ): QualityVector<Proceeds> {
   const prices = getCropPrices(crop, tiller);
   return qualityZip(prices, quantity, (price, quantity) => {
-    return { price, quantity };
+    return { name: crop.name, price, quantity };
   });
 }
 
@@ -312,6 +313,7 @@ export function getProceedsFromRaw(
     total_crops === 0 ? crop.sell_price : total_revenue / total_crops;
 
   return {
+    name: crop.name,
     price: avg_price,
     quantity: total_crops,
   };
@@ -323,43 +325,48 @@ export function getProceedsFromPreservesJar(
   artisan: boolean
 ): Proceeds | null {
   // Only fruits and veggies can be preserved
-  if (crop.type === "fruit" || crop.type === "vegetable") {
-    // Quality makes no difference! Everything is the same price.
-    const base_price = 2 * crop.sell_price + 50;
-    const price = multiplyPriceByPercentage(base_price, 140, artisan);
-    return {
-      price,
-      quantity,
-    };
+  let name: string;
+  switch (crop.type) {
+    case "fruit":
+      name = "Jelly";
+      break;
+    case "vegetable":
+      name = "Pickles";
+      break;
+    default:
+      return null;
   }
 
-  return null;
+  // Quality makes no difference! Everything is the same price.
+  const base_price = 2 * crop.sell_price + 50;
+  const price = multiplyPriceByPercentage(base_price, 140, artisan);
+  return { name, price, quantity };
 }
 
-function getBasePriceKeggedGood(crop: CropDefinition): number | null {
+function getKeggedGood(crop: CropDefinition): [string, number] | null {
   // First deal with some special cases
   // TODO: more robust than name matching?
   switch (crop.name) {
     case "Wheat":
-      return 200; // beer
+      return ["Beer", 200]; // beer
     case "Unmilled Rice":
       // technically this only works if you have milled rice...
-      return 100; // vinegar
+      return ["Vinegar", 100]; // vinegar
     case "Coffee Bean":
-      return 150; // coffee
+      return ["Coffee", 150]; // coffee
     case "Tea Leaves":
-      return 100; // green tea
+      return ["Green Tea", 100]; // green tea
     case "Hops":
-      return 300; // pale ale
+      return ["Pale Ale", 300]; // pale ale
     default:
     // fall through to checking crop type
   }
 
   switch (crop.type) {
     case "fruit":
-      return 3 * crop.sell_price;
+      return ["Wine", 3 * crop.sell_price];
     case "vegetable":
-      return multiplyPriceByPercentage(crop.sell_price, 225);
+      return ["Juice", multiplyPriceByPercentage(crop.sell_price, 225)];
     default:
       return null;
   }
@@ -370,29 +377,32 @@ export function getProceedsFromKeg(
   quantity: number,
   artisan: boolean
 ): Proceeds | null {
-  const base_price = getBasePriceKeggedGood(crop);
-  if (base_price === null) {
+  const good = getKeggedGood(crop);
+  if (good === null) {
     return null;
   }
+  const [good_name, base_price] = good;
 
-  switch (crop.name) {
-    case "Coffee Bean":
+  switch (good_name) {
+    case "Coffee":
       // Coffee is a special case: it takes 5 beans and also it's not an
       // artisan good...
       return {
+        name: good_name,
         price: base_price,
         quantity: quantity / 5,
       };
-    case "Unmilled Rice":
+    case "Vinegar":
       // Same with vinegar; produces 2 per rice, and isn't artisan good
       return {
+        name: good_name,
         price: base_price,
         quantity: quantity * 2,
       };
     default:
       // Everything else is straightforward
       const price = multiplyPriceByPercentage(base_price, 140, artisan);
-      return { price, quantity };
+      return { name: good_name, price, quantity };
   }
 }
 
@@ -422,6 +432,7 @@ export function getProceedsFromOilMaker(
   }
 
   return {
+    name: "Oil",
     price: 100, // no artisan bonus!
     quantity: oil_amount * quantity,
   };

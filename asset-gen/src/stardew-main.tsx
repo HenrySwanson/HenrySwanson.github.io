@@ -96,6 +96,10 @@ function TimeTag({ days }: { days: number }) {
   return <IconTag src="Time.png">{days.toString()}d</IconTag>;
 }
 
+function GoodTag({ name }: { name: string }) {
+  return <IconTag src={getCropIconPath(name)}>{name}</IconTag>;
+}
+
 function enableIf(enabled: boolean) {
   return enabled ? undefined : "disabled";
 }
@@ -599,11 +603,7 @@ function CropInfo({ crop_data }: { crop_data: CropData }) {
     ],
     ["Harvests", crop_data.num_harvests],
     ["Seed Cost", <GoldTag amount={def.seed_cost} />],
-    [
-      "Final Product",
-      // TODO: make it emit a nicer name
-      crop_data.processing_type,
-    ],
+    ["Final Product", <GoodTag name={crop_data.proceeds.name} />],
     // next is sell price
   ];
 
@@ -698,7 +698,6 @@ function Root() {
   // Handler for the box on the RHS
   function updateInfoBox(crop_data: CropData) {
     setCropSelected(crop_data);
-    console.log("aaa");
   }
 
   return (
