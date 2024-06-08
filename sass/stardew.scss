@@ -119,7 +119,10 @@ table.sortable thead th[aria-sort="ascending"]::after {
 .inline-icon {
   height: 1em;
   vertical-align: -0.2ex;
-  margin-right: 0.3em;
+}
+
+.after-inline-icon {
+  margin-left: 0.3em;
 }
 
 // Text at the bottom of the page

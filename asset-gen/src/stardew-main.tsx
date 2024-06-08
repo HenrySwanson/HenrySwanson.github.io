@@ -13,7 +13,7 @@ import {
   CropDefinition,
 } from "./crops";
 
-import { useState } from "react";
+import { ReactNode, useState } from "react";
 import { createRoot } from "react-dom/client";
 
 // should i pull this from a JSON like i'm doing now? or should i just
@@ -22,11 +22,6 @@ import CROP_DEFINITIONS from "./crop_definitions.json";
 
 function clamp(x: number, min: number, max: number) {
   return Math.max(min, Math.min(max, x));
-}
-
-function getCropImage(name: string): string {
-  // NOTE: replace(string, string) only replaces the first one
-  return `/img/${name.replace(/ /g, "_")}.png`;
 }
 
 function toFixedOrInteger(n: number, fractionDigits?: number): string {
@@ -65,12 +60,46 @@ const QUALITIES: (keyof QualityVector<never>)[] = [
   "iridium",
 ];
 
-const QUALITY_STAR_IMG_PATHS: QualityVector<string> = {
-  normal: "/img/Base_Quality.png",
-  silver: "/img/Silver_Quality.png",
-  gold: "/img/Gold_Quality.png",
-  iridium: "/img/Iridium_Quality.png",
+const QUALITY_STAR_ICONS: QualityVector<string> = {
+  normal: "Base_Quality.png",
+  silver: "Silver_Quality.png",
+  gold: "Gold_Quality.png",
+  iridium: "Iridium_Quality.png",
 };
+
+// Some GUI helper stuff
+function InlineIcon({ src }: { src: string }) {
+  const fullPath = "/img/" + src;
+  return <img className="inline-icon" src={fullPath} />;
+}
+
+function IconTag({ src, children }: { src: string; children: ReactNode }) {
+  return (
+    <>
+      <InlineIcon src={src} />
+      <span className="after-inline-icon">{children}</span>
+    </>
+  );
+}
+
+function GoldTag({
+  amount,
+  fractionalDigits = 2,
+}: {
+  amount: number;
+  fractionalDigits?: number;
+}) {
+  return <IconTag src="Gold.png">{amount.toFixed(fractionalDigits)}g</IconTag>;
+}
+
+function enableIf(enabled: boolean) {
+  return enabled ? undefined : "disabled";
+}
+
+function getCropIconPath(name: string): string {
+  // NOTE: replace(string, string) only replaces the first one
+  return name.replace(/ /g, "_") + ".png";
+}
 
 // Defines the set of columns for the whole table.
 type Column = {
@@ -104,12 +133,7 @@ const COLUMNS: Column[] = [
     "Name",
     (crop: CropData) => crop.definition.name,
     (name: string) => {
-      return (
-        <>
-          <img className="inline-icon" src={getCropImage(name)} />
-          {name}
-        </>
-      );
+      return <IconTag src={getCropIconPath(name)}>{name}</IconTag>;
     },
     (a: string, b: string) => a.localeCompare(b)
   ),
@@ -154,12 +178,7 @@ const COLUMNS: Column[] = [
     "Revenue",
     (crop: CropData) => crop.revenue,
     (revenue: number) => {
-      return (
-        <>
-          <img className="inline-icon" src="/img/Gold.png" />
-          {revenue.toFixed(2)}g
-        </>
-      );
+      return <GoldTag amount={revenue} />;
     },
     compareNumbers
   ),
@@ -167,12 +186,7 @@ const COLUMNS: Column[] = [
     "Profit",
     (crop: CropData) => crop.profit,
     (profit: number) => {
-      return (
-        <>
-          <img className="inline-icon" src="/img/Gold.png" />
-          {profit.toFixed(2)}g
-        </>
-      );
+      return <GoldTag amount={profit} />;
     },
     compareNumbers
   ),
@@ -184,12 +198,7 @@ const COLUMNS: Column[] = [
       if (daily_profit === null) {
         return "-";
       }
-      return (
-        <>
-          <img className="inline-icon" src="/img/Gold.png" />
-          {daily_profit.toFixed(2)}g
-        </>
-      );
+      return <GoldTag amount={daily_profit} />;
     },
     compareNullableNumbers
   ),
@@ -211,7 +220,7 @@ function CropRow({
   // Disable a row if it can't be harvested this season
   return (
     <tr
-      className={crop_data.num_harvests > 0 ? undefined : "disabled"}
+      className={enableIf(crop_data.num_harvests > 0)}
       onClick={() => on_click(crop_data)}
     >
       {cells}
@@ -492,13 +501,13 @@ function InputPanel({
             </td>
             <td>{farmer_level_input}</td>
           </tr>
-          <tr className={tiller_checkbox_enabled ? undefined : "disabled"}>
+          <tr className={enableIf(tiller_checkbox_enabled)}>
             <td>
               <label htmlFor="enable-tiller">Tiller Profession?:</label>
             </td>
             <td>{tiller_checkbox}</td>
           </tr>
-          <tr className={artisan_checkbox_enabled ? undefined : "disabled"}>
+          <tr className={enableIf(artisan_checkbox_enabled)}>
             <td>
               <label htmlFor="enable-artisan">Artisan Profession?:</label>
             </td>
@@ -514,18 +523,17 @@ function InputPanel({
             </td>
             <td>{quality_checkbox}</td>
           </tr>
-          <tr className={inputs.quality_checkbox ? undefined : "disabled"}>
+          <tr className={enableIf(inputs.quality_checkbox)}>
             <td colSpan={3}>Average Quality Factor:</td>
             <td>{average_quality_score.toFixed(2)}</td>
           </tr>
-          <tr className={inputs.quality_checkbox ? undefined : "disabled"}>
+          <tr className={enableIf(inputs.quality_checkbox)}>
             {QUALITIES.map((q) => {
               const pct = quality[q] * 100;
-              const img_path = QUALITY_STAR_IMG_PATHS[q];
+              const icon = QUALITY_STAR_ICONS[q];
               return (
                 <td key={q}>
-                  <img className="inline-icon" src={img_path} />
-                  {pct.toFixed(0)}%
+                  <IconTag src={icon}>{pct.toFixed(0)}%</IconTag>
                 </td>
               );
             })}
@@ -583,13 +591,7 @@ function CropInfo({ crop_data }: { crop_data: CropData }) {
       def.percent_chance_extra ? `${y} + ${def.percent_chance_extra}%` : y,
     ],
     ["Harvests", crop_data.num_harvests],
-    [
-      "Seed Cost",
-      <>
-        <img className="inline-icon" src="/img/Gold.png" />
-        {def.seed_cost}g
-      </>,
-    ],
+    ["Seed Cost", <GoldTag amount={def.seed_cost} />],
     [
       "Final Product",
       // TODO: make it emit a nicer name
@@ -601,25 +603,16 @@ function CropInfo({ crop_data }: { crop_data: CropData }) {
   if (crop_data.processing_type === "raw") {
     for (const q of QUALITIES) {
       const price = crop_data.crop_proceeds[q].price;
-      const img_path = QUALITY_STAR_IMG_PATHS[q];
+      const icon = QUALITY_STAR_ICONS[q];
       rows.push([
         <>
-          Sell Price (<img className="inline-icon" src={img_path} />)
+          Sell Price (<InlineIcon src={icon} />)
         </>,
-        <>
-          <img className="inline-icon" src="/img/Gold.png" />
-          {price}g
-        </>,
+        <GoldTag amount={price} />,
       ]);
     }
   } else {
-    rows.push([
-      "Sell Price",
-      <>
-        <img className="inline-icon" src="/img/Gold.png" />
-        {crop_data.proceeds.price}g
-      </>,
-    ]);
+    rows.push(["Sell Price", <GoldTag amount={crop_data.proceeds.price} />]);
   }
 
   return (
@@ -628,8 +621,7 @@ function CropInfo({ crop_data }: { crop_data: CropData }) {
         <thead>
           <tr>
             <th colSpan={2}>
-              <img className="inline-icon" src={getCropImage(def.name)} />
-              {def.name}
+              <IconTag src={getCropIconPath(def.name)}>{def.name}</IconTag>
             </th>
           </tr>
         </thead>
