@@ -590,8 +590,14 @@ const DEFAULT_INPUTS: Inputs = {
 function CropInfo({ crop_data }: { crop_data: CropData }) {
   const def = crop_data.definition;
   const y = def.yield ?? 1;
+  const seasons = def.season
+    ? Season.getArray(Season.fromString(def.season), def.multiseason ?? 1).map(
+        (s) => [Season.toString(s), <br />]
+      )
+    : ["None"];
 
   let rows: [string | JSX.Element, string | number | JSX.Element][] = [
+    ["Season(s)", <>{seasons}</>],
     ["Growth", <TimeTag days={def.days_to_grow} />],
     [
       "Regrowth",

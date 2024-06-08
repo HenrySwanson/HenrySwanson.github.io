@@ -26,6 +26,27 @@ export namespace Season {
         throw new Error(`Unknown season ${s}`);
     }
   }
+
+  export function toString(s: Season): string {
+    switch (s) {
+      case Season.SPRING:
+        return "Spring";
+      case Season.SUMMER:
+        return "Summer";
+      case Season.FALL:
+        return "Fall";
+      case Season.WINTER:
+        return "Winter";
+    }
+  }
+
+  export function getArray(start: Season, num: number): Season[] {
+    const seasons: Season[] = [];
+    for (let i = 0; i < num; i++) {
+      seasons.push(start.valueOf() + i);
+    }
+    return seasons;
+  }
 }
 
 export type ProcessingType = "raw" | "preserves" | "keg" | "oil";
@@ -175,11 +196,10 @@ export function getNumberOfHarvests(
     return "out-of-season";
   }
 
-  const seasons: Season[] = [];
-  const num_seasons = crop.multiseason ?? 1;
-  for (let i = 0; i < num_seasons; i++) {
-    seasons.push(Season.fromString(crop.season).valueOf() + i);
-  }
+  const seasons: Season[] = Season.getArray(
+    Season.fromString(crop.season),
+    crop.multiseason ?? 1
+  );
 
   // Bail out if we're out of season
   if (!seasons.includes(current_season)) {
