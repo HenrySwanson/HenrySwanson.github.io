@@ -270,47 +270,35 @@ function CropTable({
 
   function sortCropData(): CropData[] {
     // If no sort selected, default is to sort by name
-    let idx: number;
-    let dir: SortDirection;
-    if (currentSort === null) {
-      idx = 0;
-      dir = "ascending";
-    } else {
-      [idx, dir] = currentSort;
-    }
+    const [idx, dir] = currentSort === null ? [0, "ascending"] : currentSort;
 
     // We first sort our own collection, then use that to re-insert
     // our row elements.
-    const col = COLUMNS[idx];
     crop_data.sort((a, b) => {
-      const compare = col.compare(a, b);
+      const compare = COLUMNS[idx].compare(a, b);
       return dir === "ascending" ? compare : -compare;
     });
     return crop_data;
   }
 
   // Create table header
-  let header_cells = [];
-  for (const [idx, col] of COLUMNS.entries()) {
-    let aria_sort = currentSort?.[0] == idx ? currentSort[1] : undefined;
-    header_cells.push(
+  const header_cells = COLUMNS.map((col, idx) => {
+    const aria_sort = currentSort?.[0] == idx ? currentSort[1] : undefined;
+    return (
       <th key={col.name} onClick={() => handleClick(idx)} aria-sort={aria_sort}>
         {col.name}
       </th>
     );
-  }
+  });
 
   // Create the rows
-  let rows = [];
-  for (const data of sortCropData()) {
-    rows.push(
-      <CropRow
-        key={data.definition.name}
-        crop_data={data}
-        on_click={on_row_click}
-      ></CropRow>
-    );
-  }
+  const rows = sortCropData().map((data) => (
+    <CropRow
+      key={data.definition.name}
+      crop_data={data}
+      on_click={on_row_click}
+    ></CropRow>
+  ));
 
   return (
     <div className="rounded-box">
@@ -344,6 +332,21 @@ function InputPanel({
   inputs: Inputs;
   changeInputs: (inputs: Inputs) => void;
 }) {
+  // Compute some values for things
+  const quality = computeQuality(inputs.farming_level);
+  const average_quality_score = qualityDot(quality, PRICE_MULTIPLIERS);
+  const tiller_checkbox_enabled = inputs.farming_level >= 5;
+  const artisan_checkbox_enabled = inputs.farming_level >= 10;
+
+  const season_options = [
+    Season.SPRING,
+    Season.SUMMER,
+    Season.FALL,
+    Season.WINTER,
+  ].map((s) => {
+    const season_name = Season.toString(s);
+    return <option value={season_name.toLowerCase()}>{season_name}</option>;
+  });
   const season_select = (
     <select
       id="season"
@@ -353,10 +356,7 @@ function InputPanel({
         changeInputs({ ...inputs, season: Season.fromString(e.target.value) });
       }}
     >
-      <option value="spring">Spring</option>
-      <option value="summer">Summer</option>
-      <option value="fall">Fall</option>
-      <option value="winter">Winter</option>
+      {season_options}
     </select>
   );
 
@@ -364,7 +364,6 @@ function InputPanel({
     <input
       type="number"
       id="day"
-      name="day"
       value={inputs.start_day}
       onChange={(e) => {
         changeInputs({ ...inputs, start_day: e.target.valueAsNumber });
@@ -376,7 +375,6 @@ function InputPanel({
     <input
       type="checkbox"
       id="enable-multiseason"
-      name="enable-multiseason"
       checked={inputs.multiseason_checked}
       onChange={(e) => {
         changeInputs({ ...inputs, multiseason_checked: e.target.checked });
@@ -388,7 +386,6 @@ function InputPanel({
     <input
       type="checkbox"
       id="enable-quality"
-      name="enable-quality"
       checked={inputs.quality_checkbox}
       onChange={(e) => {
         changeInputs({ ...inputs, quality_checkbox: e.target.checked });
@@ -400,7 +397,6 @@ function InputPanel({
     <input
       type="number"
       id="farmer-level"
-      name="farmer-level"
       min="1"
       max="10"
       value={inputs.farming_level}
@@ -414,7 +410,7 @@ function InputPanel({
     <input
       type="checkbox"
       id="enable-tiller"
-      name="enable-tiller"
+      disabled={!tiller_checkbox_enabled}
       checked={inputs.tiller_checkbox}
       onChange={(e) => {
         changeInputs({ ...inputs, tiller_checkbox: e.target.checked });
@@ -426,7 +422,7 @@ function InputPanel({
     <input
       type="checkbox"
       id="enable-artisan"
-      name="enable-artisan"
+      disabled={!artisan_checkbox_enabled}
       checked={inputs.artisan_checkbox}
       onChange={(e) => {
         changeInputs({ ...inputs, artisan_checkbox: e.target.checked });
@@ -438,7 +434,6 @@ function InputPanel({
     <input
       type="checkbox"
       id="enable-preserves"
-      name="enable-preserves"
       checked={inputs.preserves_jar_checkbox}
       onChange={(e) => {
         changeInputs({ ...inputs, preserves_jar_checkbox: e.target.checked });
@@ -450,7 +445,6 @@ function InputPanel({
     <input
       type="checkbox"
       id="enable-kegs"
-      name="enable-kegs"
       checked={inputs.kegs_checkbox}
       onChange={(e) => {
         changeInputs({ ...inputs, kegs_checkbox: e.target.checked });
@@ -462,19 +456,12 @@ function InputPanel({
     <input
       type="checkbox"
       id="enable-oil"
-      name="enable-oil"
       checked={inputs.oil_checkbox}
       onChange={(e) => {
         changeInputs({ ...inputs, oil_checkbox: e.target.checked });
       }}
     />
   );
-
-  // Compute some values for things
-  const quality = computeQuality(inputs.farming_level);
-  const average_quality_score = qualityDot(quality, PRICE_MULTIPLIERS);
-  const tiller_checkbox_enabled = inputs.farming_level >= 5;
-  const artisan_checkbox_enabled = inputs.farming_level >= 10;
 
   // TODO: should this be a <form>?
   return (
@@ -577,7 +564,7 @@ function InputPanel({
 const DEFAULT_INPUTS: Inputs = {
   season: Season.SPRING,
   start_day: 1,
-  multiseason_checked: false,
+  multiseason_checked: true,
   quality_checkbox: false,
   farming_level: 1,
   tiller_checkbox: false,
