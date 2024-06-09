@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="utf-8">
-  <title>Henry Swanson</title>
+  <title>{{ page.title | default(value="Henry Swanson") }}</title>
   {% if page.extra.stylesheet %}
   <link rel="stylesheet" type="text/css" href="{{page.extra.stylesheet}}" />
   {% endif %}

@@ -10,7 +10,6 @@ import {
   qualityDot,
   ProcessingType,
   QualityVector,
-  CropDefinition,
 } from "./crops";
 
 import { ReactNode, useState } from "react";
